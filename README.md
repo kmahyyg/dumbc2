@@ -5,14 +5,16 @@ Yet Another Simple C2(Command and Control) Tool
 ## Feature
 
 - Agent Generator (Bind/Reverse Supported)
-- Transfer via Specific Port of TCP
+- Transfer via Specific Port of TCP/UDP(DNS PORT ONLY)
 - Shell Command
 - File Operation via Out-of-Band Transfer (Upload/Download), MUX Usage support
-- ALL Traffic Encrypted using TLS 1.3 with SSL Pinning
+- ALL Traffic Encrypted using TLS 1.3 with Force SSL Pinning
+- Screenshot
+- ShellCode Execute
 
 ## License
 
- dumbC2
+ dumbYC2
  Copyright (C) 2020  kmahyyg
  
  This program is free software: you can redistribute it and/or modify
@@ -28,3 +30,9 @@ Yet Another Simple C2(Command and Control) Tool
  You should have received a copy of the GNU Affero General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## Acknowledgement
+
+- https://github.com/tiagorlampert/CHAOS
+- https://github.com/brimstone/go-shellcode
+- https://github.com/sysdream/chashell
+- https://github.com/lesnuages/hershell
