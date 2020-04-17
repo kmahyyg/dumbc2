@@ -1,2 +1,30 @@
 # dumbc2
-Yet Another Simple C2 Tool
+
+Yet Another Simple C2(Command and Control) Tool
+
+## Feature
+
+- Client Generator (Bind/Reverse Supported)
+- Transfer via Specific Port of TCP/UDP
+- Shell Command
+- File Operation via Side Channel (Upload/Download), MUX Usage support
+- ALL Traffic Encrypted using Curve25519
+
+## License
+
+ dumbC2
+ Copyright (C) 2020  kmahyyg
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+ 
+ You should have received a copy of the GNU Affero General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
