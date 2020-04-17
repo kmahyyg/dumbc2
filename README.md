@@ -1,14 +1,14 @@
-# dumbc2
+# dumbyc2
 
 Yet Another Simple C2(Command and Control) Tool
 
 ## Feature
 
-- Client Generator (Bind/Reverse Supported)
-- Transfer via Specific Port of TCP/UDP
+- Agent Generator (Bind/Reverse Supported)
+- Transfer via Specific Port of TCP
 - Shell Command
-- File Operation via Side Channel (Upload/Download), MUX Usage support
-- ALL Traffic Encrypted using Curve25519
+- File Operation via Out-of-Band Transfer (Upload/Download), MUX Usage support
+- ALL Traffic Encrypted using TLS 1.3 with SSL Pinning
 
 ## License
 
