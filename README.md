@@ -5,7 +5,7 @@ Yet Another Simple C2(Command and Control) Tool
 ## Feature
 
 - Agent Generator (Bind/Reverse Supported)
-- Transfer via Specific Port of TCP/UDP(DNS PORT ONLY)
+- Transfer via Specific Port of TCP/UDP
 - Shell Command
 - File Operation via Out-of-Band Transfer (Upload/Download), MUX Usage support
 - ALL Traffic Encrypted using TLS 1.3 with Force SSL Pinning
