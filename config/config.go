@@ -34,81 +34,28 @@ type SSCertificate struct {
 	certFingerprint []byte
 }
 
-type parsedSSCert struct {
-	certkey  rsa.PrivateKey
-	pubk     rsa.PublicKey
-	selfcert x509.Certificate
-	sslpin   []byte
-}
-
-func (ssc *SSCertificate) parse() (*parsedSSCert, error) {
-	//todo: read to proper format and type object
-}
-
-type UserOperation struct {
-	operation        string // generate or connect or serve
-	agentOptConnType string // reverse or bind
-	agentOptPath     string
-	connEndp         string                 // endpoint ip address
-	connEndpPort     int                    // endpoint port
-	connCert         *SSCertificate         // must not be nil
-	afterCo          *AfterConnectOperation // can be nil
-}
-
 type AfterConnectOperation struct {
 	operation  string // shell, filemgr
 	muxEnabled bool   // mux or out-of-band
 }
 
-func ParseCLIInput() *UserOperation {
-	_, certData := buildConf()
-	//todo: receive user input from command line and do mapping.
-}
-
-func buildConf() (*UserConfig, *SSCertificate) {
+func buildConf() *UserConfig {
 	usr, _ := user.Current()
 	var globalConf = &UserConfig{
 		certPath:       usr.HomeDir + certFC,
 		privateKeyPath: usr.HomeDir + certPK,
 		certPinPath:    usr.HomeDir + certPin,
 	}
-	var certData *SSCertificate
 	var err2 error
 	_, err3 := os.Stat(globalConf.privateKeyPath)
 	if _, err := os.Stat(globalConf.certPath); err != nil || err3 != nil {
 		// file not exists, call generate
-		certData, err2 = generateCertificate(*globalConf)
+		_, err2 = generateCertificate(*globalConf)
 		if err2 != nil {
 			panic("Errors in Generate Certificate")
-		} else {
-		}
-	} else {
-		certData, err = readCertificate(*globalConf)
-		if err != nil {
-			panic(errors.Wrap(err, "Errors in Reading Cert And Key from PEM File"))
 		}
 	}
-	return globalConf, certData
-}
-
-func readCertificate(config UserConfig) (*SSCertificate, error) {
-	rawcert, err := ioutil.ReadFile(config.certPath)
-	if err != nil {
-		panic(err)
-	}
-	rawcertpin, err := ioutil.ReadFile(config.certPinPath)
-	if err != nil {
-		panic(err)
-	}
-	rawcertpk, err := ioutil.ReadFile(config.privateKeyPath)
-	if err != nil {
-		panic(err)
-	}
-	return &SSCertificate{
-		certData:        rawcert,
-		privKeyData:     rawcertpk,
-		certFingerprint: rawcertpin,
-	}, nil
+	return globalConf
 }
 
 func generateCertificate(conf UserConfig) (*SSCertificate, error) {
