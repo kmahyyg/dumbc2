@@ -9,8 +9,7 @@ Yet Another Simple C2(Command and Control) Tool
 - Shell Command
 - File Operation via Out-of-Band Transfer (Upload/Download), MUX Usage support
 - ALL Traffic Encrypted using TLS 1.3 with Force SSL Pinning
-- Screenshot
-- ShellCode Execute
+
 
 ## License
 

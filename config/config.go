@@ -18,52 +18,51 @@ import (
 	"time"
 )
 
+const CurrentVersion string = "v0.1.0-git"
 const certFC string = "/.dumbyc2/certs.pem"
 const certPK string = "/.dumbyc2/privkey.pem"
 const certPin string = "/.dumbyc2/certpin.txt"
 
+var (
+	GlobalConf *UserConfig
+)
+
 type UserConfig struct {
-	certPath       string
-	privateKeyPath string
-	certPinPath    string
+	CertPath       string
+	PrivateKeyPath string
+	CertPinPath    string
 }
 
 type SSCertificate struct {
-	certData        []byte
-	privKeyData     []byte
-	certFingerprint []byte
+	CertData        []byte
+	PrivKeyData     []byte
+	CertFingerprint []byte
 }
 
-type AfterConnectOperation struct {
-	operation  string // shell, filemgr
-	muxEnabled bool   // mux or out-of-band
-}
-
-func buildConf() *UserConfig {
+func BuildConf() {
 	usr, _ := user.Current()
-	var globalConf = &UserConfig{
-		certPath:       usr.HomeDir + certFC,
-		privateKeyPath: usr.HomeDir + certPK,
-		certPinPath:    usr.HomeDir + certPin,
+	GlobalConf = &UserConfig{
+		CertPath:       usr.HomeDir + certFC,
+		PrivateKeyPath: usr.HomeDir + certPK,
+		CertPinPath:    usr.HomeDir + certPin,
 	}
 	var err2 error
-	_, err3 := os.Stat(globalConf.privateKeyPath)
-	if _, err := os.Stat(globalConf.certPath); err != nil || err3 != nil {
+	_, err3 := os.Stat(GlobalConf.PrivateKeyPath)
+	if _, err := os.Stat(GlobalConf.CertPath); err != nil || err3 != nil {
 		// file not exists, call generate
-		_, err2 = generateCertificate(*globalConf)
+		_, err2 = generateCertificate(*GlobalConf)
 		if err2 != nil {
 			panic("Errors in Generate Certificate")
 		}
 	}
-	return globalConf
 }
 
 func generateCertificate(conf UserConfig) (*SSCertificate, error) {
 	// build return result
 	var ssCert = &SSCertificate{
-		certData:        nil,
-		privKeyData:     nil,
-		certFingerprint: nil,
+		CertData:        nil,
+		PrivKeyData:     nil,
+		CertFingerprint: nil,
 	}
 	bits := 4096
 	// generate rsa key pairs
@@ -82,7 +81,7 @@ func generateCertificate(conf UserConfig) (*SSCertificate, error) {
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().AddDate(10, 0, 0),
-		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageClientAuth,
 			x509.ExtKeyUsageServerAuth,
@@ -102,7 +101,7 @@ func generateCertificate(conf UserConfig) (*SSCertificate, error) {
 	if err != nil {
 		return ssCert, errors.Wrap(err, "PEM Encoding Error")
 	}
-	ssCert.certData = buf.Bytes()
+	ssCert.CertData = buf.Bytes()
 	// write rsa private key and write out
 	buf = &bytes.Buffer{}
 	err = pem.Encode(buf, &pem.Block{
@@ -112,7 +111,7 @@ func generateCertificate(conf UserConfig) (*SSCertificate, error) {
 	if err != nil {
 		return ssCert, errors.Wrap(err, "PEM PRIVKEY Encoding Error")
 	}
-	ssCert.privKeyData = buf.Bytes()
+	ssCert.PrivKeyData = buf.Bytes()
 	// load generated cert
 	parsedCert, err := x509.ParseCertificate(derCert)
 	if err != nil {
@@ -124,17 +123,17 @@ func generateCertificate(conf UserConfig) (*SSCertificate, error) {
 	pubsum := sha256.Sum256(pubDer)
 	pubPin := make([]byte, base64.StdEncoding.EncodedLen(len(pubsum)))
 	base64.StdEncoding.Encode(pubPin, pubsum[:])
-	ssCert.certFingerprint = pubPin
+	ssCert.CertFingerprint = pubPin
 
-	err = ioutil.WriteFile(conf.privateKeyPath, ssCert.privKeyData, 0600)
+	err = ioutil.WriteFile(conf.PrivateKeyPath, ssCert.PrivKeyData, 0600)
 	if err != nil {
 		panic(errors.Wrap(err, "Errors in Write Generated Private Key"))
 	}
-	err = ioutil.WriteFile(conf.certPath, ssCert.certData, 0755)
+	err = ioutil.WriteFile(conf.CertPath, ssCert.CertData, 0755)
 	if err != nil {
 		panic(errors.Wrap(err, "Errors in Write Generated Cert"))
 	}
-	err = ioutil.WriteFile(conf.certPinPath, ssCert.certFingerprint, 0644)
+	err = ioutil.WriteFile(conf.CertPinPath, ssCert.CertFingerprint, 0644)
 	if err != nil {
 		panic(errors.Wrap(err, "Errors in Write Certificate Pin"))
 	}
