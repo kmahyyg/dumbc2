@@ -1,10 +1,14 @@
 package main
 
 import (
-	"github.com/kmahyyg/dumbc2/config"
-	"log"
+	"fmt"
+	"github.com/common-nighthawk/go-figure"
 	"github.com/getsentry/sentry-go"
+	"github.com/kmahyyg/dumbc2/config"
+	"github.com/kmahyyg/dumbc2/utils"
+	"github.com/kmahyyg/dumbc2/useri"
 	"github.com/manifoldco/promptui"
+	"log"
 )
 
 func init() {
@@ -26,5 +30,36 @@ func printVersion() {
 func main() {
 	config.BuildConf()
 	printVersion()
+	printBanner()
+	printIPAddr()
+	prompt := promptui.Select{
+		Label: "Select Operation: ",
+		Items: []string{"Server", "Generate"},
+	}
+	_, result, errs := prompt.Run()
 
+	if errs != nil{
+		log.Fatalln("Internal Error. ")
+	}
+
+	switch result {
+	case "Server":
+		useri.StartServer()
+	case "Generate":
+		useri.GenerateAgent()
+	default:
+		log.Fatalln("Illegal Operation. ")
+	}
+
+}
+
+func printIPAddr() {
+	fmt.Println("Interface IP: " + utils.GetLocalIP())
+}
+
+func printBanner() {
+	const banner = "DumbY-C2"
+	myFigure := figure.NewFigure(banner, "", true)
+	myFigure.Print()
+	fmt.Println(config.CurrentVersion + " - master - 20200426")
 }

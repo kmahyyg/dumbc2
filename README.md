@@ -7,9 +7,8 @@ Yet Another Simple C2(Command and Control) Tool
 - Agent Generator (Bind/Reverse Supported)
 - Transfer via Specific Port of TCP/UDP
 - Shell Command
-- File Operation via Out-of-Band Transfer (Upload/Download), MUX Usage support
-- ALL Traffic Encrypted using TLS 1.3 with Force SSL Pinning
-
+- File Transfer Operation with Mux support
+- ALL Traffic Encrypted using TLS with Force SSL Pinning
 
 ## License
 
@@ -33,5 +32,5 @@ Yet Another Simple C2(Command and Control) Tool
 
 - https://github.com/tiagorlampert/CHAOS
 - https://github.com/brimstone/go-shellcode
-- https://github.com/sysdream/chashell
 - https://github.com/lesnuages/hershell
+- https://github.com/thesecondsun/gosh

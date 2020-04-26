@@ -14,7 +14,7 @@ import (
 
 type TLSPinnedDialer func(network, addr string)(net.Conn, error)
 
-func DialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
+func TLSDialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
 	return func(network, addr string) (net.Conn,error) {
 		conn, err := tls.Dial(network, addr, &tls.Config{
 			InsecureSkipVerify: true,
@@ -39,8 +39,9 @@ func DialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
 	}
 }
 
-// ServerBuilder: Just give the server listen addr, we do next.
-func ServerBuilder(laddr string) (net.Listener, error){
+// TLSServerBuilder: Just give the server listen addr, we do next.
+// You do need to check the client certificate if you use Bind Shell.
+func TLSServerBuilder(laddr string) (net.Listener, error){
 	var certLoca = config.GlobalConf
 	cert, err := tls.LoadX509KeyPair(certLoca.CertPath, certLoca.PrivateKeyPath)
 	if err != nil {
@@ -57,4 +58,6 @@ func ServerBuilder(laddr string) (net.Listener, error){
 		log.Fatalln(curLis)
 	}
 	return curLis, err
+	// the current bind listener will not verify client (which is control side here)
+	// you need to accept and check certificates.
 }
