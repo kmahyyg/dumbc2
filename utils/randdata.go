@@ -33,7 +33,7 @@ func RandString(n int) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func readUserInput() string{
+func ReadUserInput() string{
 	reader := bufio.NewReader(os.Stdin)
 	var data string
 	data, _ = reader.ReadString('\n')

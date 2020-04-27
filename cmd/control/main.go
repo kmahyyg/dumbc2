@@ -7,7 +7,6 @@ import (
 	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/utils"
 	"github.com/kmahyyg/dumbc2/useri"
-	"github.com/manifoldco/promptui"
 	"log"
 )
 
@@ -32,15 +31,7 @@ func main() {
 	printVersion()
 	printBanner()
 	printIPAddr()
-	prompt := promptui.Select{
-		Label: "Select Operation: ",
-		Items: []string{"Server", "Generate"},
-	}
-	_, result, errs := prompt.Run()
-
-	if errs != nil{
-		log.Fatalln("Internal Error. ")
-	}
+	//todo: argparse
 
 	switch result {
 	case "Server":
