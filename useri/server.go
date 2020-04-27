@@ -2,7 +2,7 @@ package useri
 
 import (
 	"fmt"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"github.com/hashicorp/yamux"
 	"github.com/kmahyyg/dumbc2/transport"
 	"github.com/kmahyyg/dumbc2/utils"

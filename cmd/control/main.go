@@ -27,7 +27,8 @@ func printVersion() {
 }
 
 func main() {
-	config.BuildConf()
+	config.CheckCert()
+	config.BuildUserOperation()
 	printVersion()
 	printBanner()
 	printIPAddr()
