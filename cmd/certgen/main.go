@@ -9,20 +9,34 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
-	"github.com/kmahyyg/dumbc2/utils"
 	"github.com/kmahyyg/dumbc2/config"
+	"github.com/kmahyyg/dumbc2/utils"
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"log"
 	"math/big"
+	"os"
 	"time"
 )
 
 func main() {
-	
+	log.Println("Program started.")
+	currentConf := config.BuildCertPath()
+	homeDir, _ := os.UserHomeDir()
+	_ = os.Mkdir(homeDir + "/.dumbyc2", 0755)
+	if config.CheckCert(false) {
+		log.Fatalln("Certificate Already Exists. Delete ~/.dumbyc2 then re-run this program.")
+	}
+	log.Println("Start Generation, Please hang on.")
+	_, err := generateCertificate(currentConf)
+	if err != nil {
+		log.Fatalln(err)
+	} else {
+		log.Println("Generate finished.")
+	}
 }
 
-
-func generateCertificate(conf config.UserConfig) ([]*config.SSCertificate, error) {
+func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, error) {
 	// build certificate
 	var ssCACert = &config.SSCertificate{
 		CertData:        nil,
@@ -42,7 +56,7 @@ func generateCertificate(conf config.UserConfig) ([]*config.SSCertificate, error
 		return []*config.SSCertificate{ssCACert, ssCert}, errors.Wrap(err, "Generate PRIVKEY Error")
 	}
 	// generate random things
-	serialNo, _ := rand.Int(rand.Reader, big.NewInt(1<<64))
+	serialNo, _ := rand.Int(rand.Reader, big.NewInt(utils.RandMathInt64(65535)))
 	randDomain := utils.RandString(8) + ".com"
 	// generate self-signed certificate
 	ssCASignedCert := &x509.Certificate{
@@ -84,11 +98,11 @@ func generateCertificate(conf config.UserConfig) ([]*config.SSCertificate, error
 		return []*config.SSCertificate{ssCACert, ssCert}, errors.Wrap(err, "Create Certificate Error")
 	}
 
-	err = writeCert(derCACert, &conf, cAprivKey, ssCACert, true)
+	err = writeCert(derCACert, conf, cAprivKey, ssCACert, true)
 	if err != nil {
 		panic(err)
 	}
-	err = writeCert(derCert, &conf, privKey, ssCert, false)
+	err = writeCert(derCert, conf, privKey, ssCert, false)
 	if err != nil {
 		panic(err)
 	}

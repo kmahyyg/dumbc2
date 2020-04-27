@@ -9,6 +9,10 @@ import (
 	"unsafe"
 )
 
+func RandMathInt64(a int) int64 {
+	return int64(rand.Intn(a))
+}
+
 func RandString(n int) string {
 	var src = rand.NewSource(time.Now().UnixNano())
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

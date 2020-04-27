@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"os/user"
 )
 
@@ -37,7 +38,8 @@ type UserOperation struct {
 	Port int
 }
 
-func CheckCert() {
+
+func BuildCertPath() *UserConfig {
 	usr, _ := user.Current()
 	GlobalCert = &UserConfig{
 		ClientPath:           usr.HomeDir + certCC,
@@ -47,7 +49,31 @@ func CheckCert() {
 		CACertPinPath:        usr.HomeDir + certPin,
 		CAPath:               usr.HomeDir + certFC,
 	}
-	//todo: check if all file exists
+	return GlobalCert
+}
+
+func CheckCert(isAgent bool) bool {
+	check1 := checkFileExists(GlobalCert.ClientPath) && checkFileExists(GlobalCert.ClientPinPath) && checkFileExists(GlobalCert.ClientPrivateKeyPath)
+	check2 := checkFileExists(GlobalCert.CAPath) && checkFileExists(GlobalCert.CACertPinPath) && checkFileExists(GlobalCert.CACertPinPath)
+	if isAgent {
+		if !check1 {
+			return false
+		}
+	} else {
+		if !check1 || !check2 {
+			return false
+		}
+	}
+	return true
+}
+
+func checkFileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 func BuildUserOperation(){
