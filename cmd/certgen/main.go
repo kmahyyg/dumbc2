@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
+	"flag"
 	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/utils"
 	"github.com/pkg/errors"
@@ -16,14 +17,23 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
 func main() {
+	var fileLoca string
+	flag.StringVar(&fileLoca, "o", "~","Output Directory")
+	flag.Parse()
+	homeDir, _ :=os.UserHomeDir()
+	if strings.HasPrefix(fileLoca, "~") {
+		fileLoca = strings.Replace(fileLoca, "~", homeDir, 1)
+	}
+	fileLoca, _ = filepath.Abs(fileLoca)
 	log.Println("Program started.")
-	currentConf := config.BuildCertPath()
-	homeDir, _ := os.UserHomeDir()
-	_ = os.Mkdir(homeDir + "/.dumbyc2", 0755)
+	currentConf := config.BuildCertPath(fileLoca)
+	_ = os.Mkdir(currentConf.OutputPath, 0755)
 	if config.CheckCert(false) {
 		log.Fatalln("Certificate Already Exists. Delete ~/.dumbyc2 then re-run this program.")
 	}

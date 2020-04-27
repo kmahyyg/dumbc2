@@ -1,11 +1,12 @@
 package config
 
 import (
+	"log"
 	"os"
-	"os/user"
 )
 
 const CurrentVersion string = "v0.1.0-git"
+const certPathPrefix = "/.dumbyc2"
 const certCC string = "/.dumbyc2/clientcert.pem"
 const certCCPK string = "/.dumbyc2/clientpk.pem"
 const certCCPin string = "/.dumbyc2/clientpin.txt"
@@ -18,6 +19,7 @@ var (
 )
 
 type UserConfig struct {
+	OutputPath			 string
 	ClientPath           string
 	ClientPrivateKeyPath string
 	ClientPinPath        string
@@ -36,18 +38,29 @@ type UserOperation struct {
 	IsServer int
 	Host string
 	Port int
+	CertLocation string
 }
 
 
-func BuildCertPath() *UserConfig {
-	usr, _ := user.Current()
+func BuildCertPath(dataDir string) *UserConfig {
+	var usr string
+	var err error
+	if len(dataDir) != 0 {
+		usr = dataDir
+	} else {
+		usr, err = os.UserHomeDir()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
 	GlobalCert = &UserConfig{
-		ClientPath:           usr.HomeDir + certCC,
-		ClientPrivateKeyPath: usr.HomeDir + certCCPK,
-		ClientPinPath:        usr.HomeDir + certCCPin,
-		CAPrivateKeyPath:     usr.HomeDir + certPK,
-		CACertPinPath:        usr.HomeDir + certPin,
-		CAPath:               usr.HomeDir + certFC,
+		OutputPath: 		  usr + certPathPrefix,
+		ClientPath:           usr + certCC,
+		ClientPrivateKeyPath: usr + certCCPK,
+		ClientPinPath:        usr + certCCPin,
+		CAPrivateKeyPath:     usr + certPK,
+		CACertPinPath:        usr + certPin,
+		CAPath:               usr + certFC,
 	}
 	return GlobalCert
 }
@@ -76,6 +89,6 @@ func checkFileExists(filename string) bool {
 	}
 }
 
-func BuildUserOperation(){
-	//todo: build user operation
-}
+//func BuildUserOperation() *UserOperation{
+//
+//}

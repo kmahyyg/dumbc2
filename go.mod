@@ -3,6 +3,7 @@ module github.com/kmahyyg/dumbc2
 go 1.14
 
 require (
+	github.com/akamensky/argparse v1.2.1 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20190529165535-67e0ed34491a
 	github.com/getsentry/sentry-go v0.6.0
 	github.com/go-errors/errors v1.0.1

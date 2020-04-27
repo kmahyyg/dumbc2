@@ -5,8 +5,8 @@ import (
 	"github.com/common-nighthawk/go-figure"
 	"github.com/getsentry/sentry-go"
 	"github.com/kmahyyg/dumbc2/config"
-	"github.com/kmahyyg/dumbc2/utils"
 	"github.com/kmahyyg/dumbc2/useri"
+	"github.com/kmahyyg/dumbc2/utils"
 	"log"
 )
 
@@ -27,13 +27,14 @@ func printVersion() {
 }
 
 func main() {
-	config.CheckCert()
 	config.BuildUserOperation()
 	printVersion()
 	printBanner()
 	printIPAddr()
 	//todo: argparse
-
+	if !config.CheckCert() {
+		panic("Certificate not exists. Generate first.")
+	}
 	switch result {
 	case "Server":
 		useri.StartServer()

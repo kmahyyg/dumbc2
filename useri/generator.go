@@ -1,5 +1,0 @@
-package useri
-
-func GenerateAgent(){
-
-}
