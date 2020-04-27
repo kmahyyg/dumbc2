@@ -17,9 +17,9 @@ func GenerateAgent(){
 	}
 
 	switch result {
-	case "Reverse":
+		case "Reverse":
 
-	case "Bind":
-		
+		case "Bind":
+
 	}
 }

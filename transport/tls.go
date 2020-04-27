@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/kmahyyg/dumbc2/config"
+	"io/ioutil"
 	"log"
 	"net"
 	"time"
@@ -41,20 +42,36 @@ func TLSDialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
 
 // TLSServerBuilder: Just give the server listen addr, we do next.
 // You do need to check the client certificate if you use Bind Shell.
-func TLSServerBuilder(laddr string) (net.Listener, error){
+func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error){
 	var certLoca = config.GlobalConf
-	cert, err := tls.LoadX509KeyPair(certLoca.CertPath, certLoca.PrivateKeyPath)
+	cert, err := tls.LoadX509KeyPair(certLoca.CAPath, certLoca.CAPrivateKeyPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	tlsConf := tls.Config{Certificates: []tls.Certificate{cert}}
+
+	var tlsConf *tls.Config
+	if !verifyClient{
+		tlsConf = &tls.Config{Certificates: []tls.Certificate{cert}}
+	} else {
+		caAuthCert, err := ioutil.ReadFile(certLoca.CAPath)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caAuthCert)
+		tlsConf = &tls.Config{
+			ClientAuth: tls.RequireAndVerifyClientCert,
+			ClientCAs:  caCertPool,
+		}
+	}
+
 	now := time.Now()
 	tlsConf.Time = func() time.Time {
 		return now
 	}
 	tlsConf.Rand = rand.Reader
-	curLis, err := tls.Listen("tcp", laddr, &tlsConf)
-	if err != nil {
+	curLis, err := tls.Listen("tcp", laddr, tlsConf)
+	if err != nil || curLis == nil{
 		log.Fatalln(curLis)
 	}
 	return curLis, err
