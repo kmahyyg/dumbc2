@@ -3,6 +3,8 @@ package config
 import (
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 const CurrentVersion string = "v0.1.0-git"
@@ -16,6 +18,7 @@ const certPin string = "/.dumbyc2/cacertpin.txt"
 
 var (
 	GlobalCert *UserConfig
+	GlobalOP *UserOperation
 )
 
 type UserConfig struct {
@@ -46,7 +49,12 @@ func BuildCertPath(dataDir string) *UserConfig {
 	var usr string
 	var err error
 	if len(dataDir) != 0 {
+		homeDir, _ :=os.UserHomeDir()
 		usr = dataDir
+		if strings.HasPrefix(dataDir, "~") {
+			usr = strings.Replace(dataDir, "~", homeDir, 1)
+		}
+		usr, _ = filepath.Abs(usr)
 	} else {
 		usr, err = os.UserHomeDir()
 		if err != nil {
@@ -89,6 +97,6 @@ func checkFileExists(filename string) bool {
 	}
 }
 
-//func BuildUserOperation() *UserOperation{
-//
-//}
+func BuildUserOperation(server bool, client bool, lhost string, lport int, certstor string) *UserOperation{
+
+}

@@ -1,13 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/akamensky/argparse"
 	"github.com/common-nighthawk/go-figure"
 	"github.com/getsentry/sentry-go"
 	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/useri"
 	"github.com/kmahyyg/dumbc2/utils"
 	"log"
+	"net"
+	"os"
+	"strconv"
 )
 
 func init() {
@@ -27,12 +32,59 @@ func printVersion() {
 }
 
 func main() {
-	config.BuildUserOperation()
-	printVersion()
 	printBanner()
+	printVersion()
+	parser := argparse.NewParser(os.Args[0], "Dumb C2")
+	server := parser.Flag("s","server", &argparse.Options{
+		Required: false,
+		Help:     "Run as Server",
+		Default:  true,
+	})
+	client := parser.Flag("c", "client", &argparse.Options{
+		Required: false,
+		Help:     "Run as Client",
+		Default:  false,
+	})
+	if *client && *server {
+		panic("Conflict Flags.")
+	}
+	certStor := parser.String("C","cert", &argparse.Options{
+		Required: false,
+		Help:     "Certificate Location",
+		Default:  "~",
+	})
+	lhost := parser.String("H","host", &argparse.Options{
+		Required: true,
+		Validate: func(args []string) error {
+			ip := net.ParseIP(args[0])
+			if ip == nil {
+				return errors.New("IP Invalid.")
+			}
+			return nil
+		},
+		Help:     "The IP You are gonna listen or connect, default is your interface local IP.",
+		Default:  utils.GetLocalIP(),
+	})
+	lport := parser.Int("P", "port", &argparse.Options{
+		Required: true,
+		Validate: func(args []string) error {
+			si, err := strconv.Atoi(args[0])
+			if err != nil || si < 1 || si > 65535{
+				return errors.New("Illegal Port.")
+			}
+			return nil
+		},
+		Help:     "The Port You are gonna listen or connect, default is 25985.",
+		Default:  25985,
+	})
+	err := parser.Parse(os.Args)
+	if err != nil {
+		panic(err)
+	}
+	config.BuildCertPath(*certStor)
+	config.BuildUserOperation(*server, *client, *lhost, *lport, *certStor)
 	printIPAddr()
-	//todo: argparse
-	if !config.CheckCert() {
+	if !config.CheckCert(*client) {
 		panic("Certificate not exists. Generate first.")
 	}
 	switch result {
