@@ -36,6 +36,7 @@ func TLSDialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
 				log.Fatalln("Certificate check error.")
 			}
 		}
+		_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
 		return conn, nil
 	}
 }

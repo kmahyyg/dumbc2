@@ -1,15 +1,22 @@
 package utils
 
-import "net"
+import (
+	"log"
+	"net"
+)
 
 func GetAllIPs() []string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return []string{""}
 	}
-	var ipData = make([]string, len(addrs))
+	var ipData []string
 	for _, addr := range addrs {
-		ipData = append(ipData, addr.String())
+		singleIP, _, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			log.Fatal(err)
+		}
+		ipData = append(ipData, singleIP.String())
 	}
 	return ipData
 }

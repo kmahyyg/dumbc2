@@ -2,11 +2,14 @@ package useri
 
 import (
 	"github.com/go-errors/errors"
-	"github.com/kmahyyg/dumbc2/utils"
+	"github.com/hashicorp/yamux"
 	"github.com/kmahyyg/dumbc2/transport"
+	"github.com/kmahyyg/dumbc2/utils"
 	"github.com/manifoldco/promptui"
 	"log"
+	"net"
 	"strconv"
+	"time"
 )
 
 func StartServer(){
@@ -37,14 +40,33 @@ func StartServer(){
 		log.Fatalln("Internal Error.")
 	}
 
-	fladdr := lres + lport
+	fladdr := lres + ":" + lport
     lbserver, err := transport.TLSServerBuilder(fladdr, false)
-    for true{
-    	conn, err := lbserver.Accept()
-		if err != nil {
-			log.Println(err)
-			continue
+    for true {
+    	if lbserver != nil {
+			conn, err := lbserver.Accept()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
+			sess, err := yamux.Server(conn, nil)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			stream, err := sess.Accept()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			handleClient(stream)
+		} else {
+			log.Fatalln("Failed to bind.")
 		}
-
 	}
+}
+
+func handleClient(stream net.Conn){
+	// todo: full interactive pty
 }

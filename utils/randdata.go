@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"bufio"
 	"math/rand"
+	"os"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -28,4 +31,13 @@ func RandString(n int) string {
 		remain--
 	}
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+func readUserInput() string{
+	reader := bufio.NewReader(os.Stdin)
+	var data string
+	data, _ = reader.ReadString('\n')
+	data = strings.TrimSuffix(data, "\n")
+	data = strings.TrimSuffix(data, "\r")
+	return data
 }
