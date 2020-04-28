@@ -7,6 +7,7 @@ import (
 	"github.com/common-nighthawk/go-figure"
 	"github.com/getsentry/sentry-go"
 	"github.com/kmahyyg/dumbc2/config"
+	"github.com/kmahyyg/dumbc2/useri"
 	"github.com/kmahyyg/dumbc2/utils"
 	"log"
 	"net"
@@ -42,6 +43,17 @@ func main() {
 	client := parser.Flag("c", "client", &argparse.Options{
 		Required: false,
 		Help:     "Run as Client",
+		Default:  false,
+	})
+	bindWanted := parser.Flag("b", "bind", &argparse.Options{
+		Required: false,
+		Validate: func(args []string) error {
+			if !*client {
+				return errors.New("Bind must be working on client mode.")
+			}
+			return nil
+		},
+		Help:     "Run as Bind, if not set, it's reverse",
 		Default:  false,
 	})
 	if *client && *server {
@@ -82,12 +94,19 @@ func main() {
 	}
 	*certStor = utils.GetAbsolutePath(*certStor)
 	config.BuildCertPath(*certStor)
-	config.BuildUserOperation(*server, *client, *lhost, *lport, *certStor)
+	config.BuildUserOperation(*server, *client, *bindWanted, *lhost, *lport, *certStor)
 	printIPAddr()
 	if !config.CheckCert(*client) {
 		panic("Certificate not exists. Generate first.")
 	}
-
+	if *server && *client {
+		panic("Internal error.")
+	}
+	if *server {
+		useri.StartServer(*config.GlobalOP)
+	} else {
+		useri.StartAgent(*config.GlobalOP)
+	}
 }
 
 func printIPAddr() {

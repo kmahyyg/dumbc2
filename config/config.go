@@ -5,22 +5,24 @@ import (
 	"os"
 )
 
-const CurrentVersion string = "v0.1.0-git"
-const certPathPrefix = "/.dumbyc2"
-const certCC string = "/.dumbyc2/clientcert.pem"
-const certCCPK string = "/.dumbyc2/clientpk.pem"
-const certCCPin string = "/.dumbyc2/clientpin.txt"
-const certFC string = "/.dumbyc2/cacert.pem"
-const certPK string = "/.dumbyc2/caprivkey.pem"
-const certPin string = "/.dumbyc2/cacertpin.txt"
+const (
+	CurrentVersion string = "v0.1.0-git"
+	certPathPrefix        = "/.dumbyc2"
+	certCC         string = "/.dumbyc2/clientcert.pem"
+	certCCPK       string = "/.dumbyc2/clientpk.pem"
+	certCCPin      string = "/.dumbyc2/clientpin.txt"
+	certFC         string = "/.dumbyc2/cacert.pem"
+	certPK         string = "/.dumbyc2/caprivkey.pem"
+	certPin        string = "/.dumbyc2/cacertpin.txt"
+)
 
 var (
 	GlobalCert *UserConfig
-	GlobalOP *UserOperation
+	GlobalOP   *UserOperation
 )
 
 type UserConfig struct {
-	OutputPath			 string
+	OutputPath           string
 	ClientPath           string
 	ClientPrivateKeyPath string
 	ClientPinPath        string
@@ -36,17 +38,17 @@ type SSCertificate struct {
 }
 
 type UserOperation struct {
-	IsServer bool
-	Host string
-	Port int
+	IsServer     bool
+	NeedBind     bool
+	Host         string
+	Port         int
 	CertLocation string
 }
-
 
 func BuildCertPath(dataDir string) *UserConfig {
 	usr := utils.GetAbsolutePath(dataDir)
 	GlobalCert = &UserConfig{
-		OutputPath: 		  usr + certPathPrefix,
+		OutputPath:           usr + certPathPrefix,
 		ClientPath:           usr + certCC,
 		ClientPrivateKeyPath: usr + certCCPK,
 		ClientPinPath:        usr + certCCPin,
@@ -81,7 +83,7 @@ func checkFileExists(filename string) bool {
 	}
 }
 
-func BuildUserOperation(server bool, client bool, lhost string, lport int, certstor string) *UserOperation{
+func BuildUserOperation(server bool, client bool, needBind bool, lhost string, lport int, certstor string) *UserOperation {
 	var isServer bool
 	if server && client {
 		panic("Conflic Settings.")
@@ -92,6 +94,7 @@ func BuildUserOperation(server bool, client bool, lhost string, lport int, certs
 	}
 	GlobalOP = &UserOperation{
 		IsServer:     isServer,
+		NeedBind:     needBind,
 		Host:         lhost,
 		Port:         lport,
 		CertLocation: certstor,
