@@ -5,7 +5,6 @@ import (
 	"net"
 )
 
-
 func SendData2Conn(data []byte,conn net.Conn){
 	wrbytes, err := conn.Write(data)
 	if err != nil || wrbytes != len(data) {

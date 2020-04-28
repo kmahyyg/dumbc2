@@ -38,10 +38,8 @@ type SSCertificate struct {
 }
 
 type UserOperation struct {
-	IsServer     bool
 	NeedBind     bool
-	Host         string
-	Port         int
+	ListenAddr	 string
 	CertLocation string
 }
 
@@ -83,20 +81,10 @@ func checkFileExists(filename string) bool {
 	}
 }
 
-func BuildUserOperation(server bool, client bool, needBind bool, lhost string, lport int, certstor string) *UserOperation {
-	var isServer bool
-	if server && client {
-		panic("Conflic Settings.")
-	} else if server {
-		isServer = true
-	} else {
-		isServer = false
-	}
+func BuildUserOperation(needBind bool, laddr string, certstor string) *UserOperation {
 	GlobalOP = &UserOperation{
-		IsServer:     isServer,
 		NeedBind:     needBind,
-		Host:         lhost,
-		Port:         lport,
+		ListenAddr:         laddr,
 		CertLocation: certstor,
 	}
 	return GlobalOP

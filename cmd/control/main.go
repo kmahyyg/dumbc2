@@ -35,16 +35,6 @@ func main() {
 	printBanner()
 	printVersion()
 	parser := argparse.NewParser(os.Args[0], "Dumb C2")
-	server := parser.Flag("s","server", &argparse.Options{
-		Required: false,
-		Help:     "Run as Server",
-		Default:  true,
-	})
-	client := parser.Flag("c", "client", &argparse.Options{
-		Required: false,
-		Help:     "Run as Client",
-		Default:  false,
-	})
 	bindWanted := parser.Flag("b", "bind", &argparse.Options{
 		Required: false,
 		Validate: func(args []string) error {
@@ -56,37 +46,15 @@ func main() {
 		Help:     "Run as Bind, if not set, it's reverse",
 		Default:  false,
 	})
-	if *client && *server {
-		panic("Conflict Flags.")
-	}
 	certStor := parser.String("C","cert", &argparse.Options{
 		Required: false,
 		Help:     "Certificate Location",
 		Default:  "~",
 	})
-	lhost := parser.String("H","host", &argparse.Options{
+	laddr := parser.String("l","listen", &argparse.Options{
 		Required: true,
-		Validate: func(args []string) error {
-			ip := net.ParseIP(args[0])
-			if ip == nil {
-				return errors.New("IP Invalid.")
-			}
-			return nil
-		},
 		Help:     "The IP You are gonna listen or connect, default is your interface local IP.",
 		Default:  utils.GetLocalIP(),
-	})
-	lport := parser.Int("P", "port", &argparse.Options{
-		Required: true,
-		Validate: func(args []string) error {
-			si, err := strconv.Atoi(args[0])
-			if err != nil || si < 1 || si > 65535{
-				return errors.New("Illegal Port.")
-			}
-			return nil
-		},
-		Help:     "The Port You are gonna listen or connect, default is 25985.",
-		Default:  25985,
 	})
 	err := parser.Parse(os.Args)
 	if err != nil {
@@ -94,19 +62,12 @@ func main() {
 	}
 	*certStor = utils.GetAbsolutePath(*certStor)
 	config.BuildCertPath(*certStor)
-	config.BuildUserOperation(*server, *client, *bindWanted, *lhost, *lport, *certStor)
+	config.BuildUserOperation(*bindWanted, *laddr, *certStor)
 	printIPAddr()
-	if !config.CheckCert(*client) {
+	if !config.CheckCert(false) {
 		panic("Certificate not exists. Generate first.")
 	}
-	if *server && *client {
-		panic("Internal error.")
-	}
-	if *server {
-		useri.StartServer(*config.GlobalOP)
-	} else {
-		useri.StartAgent(*config.GlobalOP)
-	}
+	useri.StartServer(*config.GlobalOP)
 }
 
 func printIPAddr() {
