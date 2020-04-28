@@ -17,8 +17,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -26,11 +24,7 @@ func main() {
 	var fileLoca string
 	flag.StringVar(&fileLoca, "o", "~","Output Directory")
 	flag.Parse()
-	homeDir, _ :=os.UserHomeDir()
-	if strings.HasPrefix(fileLoca, "~") {
-		fileLoca = strings.Replace(fileLoca, "~", homeDir, 1)
-	}
-	fileLoca, _ = filepath.Abs(fileLoca)
+    fileLoca = utils.GetAbsolutePath(fileLoca)
 	log.Println("Program started.")
 	currentConf := config.BuildCertPath(fileLoca)
 	_ = os.Mkdir(currentConf.OutputPath, 0755)

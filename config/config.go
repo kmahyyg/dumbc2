@@ -1,10 +1,8 @@
 package config
 
 import (
-	"log"
+	"github.com/kmahyyg/dumbc2/utils"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 const CurrentVersion string = "v0.1.0-git"
@@ -38,7 +36,7 @@ type SSCertificate struct {
 }
 
 type UserOperation struct {
-	IsServer int
+	IsServer bool
 	Host string
 	Port int
 	CertLocation string
@@ -46,21 +44,7 @@ type UserOperation struct {
 
 
 func BuildCertPath(dataDir string) *UserConfig {
-	var usr string
-	var err error
-	if len(dataDir) != 0 {
-		homeDir, _ :=os.UserHomeDir()
-		usr = dataDir
-		if strings.HasPrefix(dataDir, "~") {
-			usr = strings.Replace(dataDir, "~", homeDir, 1)
-		}
-		usr, _ = filepath.Abs(usr)
-	} else {
-		usr, err = os.UserHomeDir()
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
+	usr := utils.GetAbsolutePath(dataDir)
 	GlobalCert = &UserConfig{
 		OutputPath: 		  usr + certPathPrefix,
 		ClientPath:           usr + certCC,
@@ -98,5 +82,19 @@ func checkFileExists(filename string) bool {
 }
 
 func BuildUserOperation(server bool, client bool, lhost string, lport int, certstor string) *UserOperation{
-
+	var isServer bool
+	if server && client {
+		panic("Conflic Settings.")
+	} else if server {
+		isServer = true
+	} else {
+		isServer = false
+	}
+	GlobalOP = &UserOperation{
+		IsServer:     isServer,
+		Host:         lhost,
+		Port:         lport,
+		CertLocation: certstor,
+	}
+	return GlobalOP
 }

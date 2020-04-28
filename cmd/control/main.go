@@ -7,7 +7,6 @@ import (
 	"github.com/common-nighthawk/go-figure"
 	"github.com/getsentry/sentry-go"
 	"github.com/kmahyyg/dumbc2/config"
-	"github.com/kmahyyg/dumbc2/useri"
 	"github.com/kmahyyg/dumbc2/utils"
 	"log"
 	"net"
@@ -81,19 +80,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	*certStor = utils.GetAbsolutePath(*certStor)
 	config.BuildCertPath(*certStor)
 	config.BuildUserOperation(*server, *client, *lhost, *lport, *certStor)
 	printIPAddr()
 	if !config.CheckCert(*client) {
 		panic("Certificate not exists. Generate first.")
-	}
-	switch result {
-	case "Server":
-		useri.StartServer()
-	case "Generate":
-		useri.GenerateAgent()
-	default:
-		log.Fatalln("Illegal Operation. ")
 	}
 
 }
