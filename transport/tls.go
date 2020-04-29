@@ -15,9 +15,9 @@ import (
 
 type TLSPinnedDialer func(network, addr string) (net.Conn, error)
 
-func TLSDialerBuilder(pinnedFGP []byte, clientCert string, clientKey string) TLSPinnedDialer {
+func TLSDialerBuilder(pinnedFGP []byte, clientCert interface{}, clientKey interface{}) TLSPinnedDialer {
 	return func(network, addr string) (net.Conn, error) {
-		cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
+		cert, err := tls.X509KeyPair(clientCert.([]byte), clientKey.([]byte))
 		if err != nil {
 			panic(err)
 		}

@@ -9,5 +9,6 @@ require (
 	github.com/go-errors/errors v1.0.1
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d
 	github.com/pkg/errors v0.9.1
+	github.com/rakyll/statik v0.1.7 // indirect
 	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f
 )
