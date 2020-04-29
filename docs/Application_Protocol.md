@@ -30,6 +30,10 @@
 - Send Command
 - Get Pingback
 
+`CNTU`: Continue transfer
+
+- Send Command to confirm the transfer
+
 # Responses
 
 `00$xx$DATA`

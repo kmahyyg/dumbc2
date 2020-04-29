@@ -43,8 +43,14 @@ func GetShell(conn net.Conn) {
 		}
 	}
 	go closeCheck()
-	exitData := <- exitSignal
-	if exitData == 1 || exitData == 2{
+	exitData := <-exitSignal
+	switch exitData {
+	case 1:
+		return
+	case 2:
+		fmt.Println("Function Exit with Error.")
+		return
+	default:
 		return
 	}
 }

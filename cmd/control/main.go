@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/akamensky/argparse"
 	"github.com/common-nighthawk/go-figure"
@@ -10,9 +9,7 @@ import (
 	"github.com/kmahyyg/dumbc2/useri"
 	"github.com/kmahyyg/dumbc2/utils"
 	"log"
-	"net"
 	"os"
-	"strconv"
 )
 
 func init() {
@@ -35,17 +32,6 @@ func main() {
 	printBanner()
 	printVersion()
 	parser := argparse.NewParser(os.Args[0], "Dumb C2")
-	bindWanted := parser.Flag("b", "bind", &argparse.Options{
-		Required: false,
-		Validate: func(args []string) error {
-			if !*client {
-				return errors.New("Bind must be working on client mode.")
-			}
-			return nil
-		},
-		Help:     "Run as Bind, if not set, it's reverse",
-		Default:  false,
-	})
 	certStor := parser.String("C","cert", &argparse.Options{
 		Required: false,
 		Help:     "Certificate Location",
@@ -62,7 +48,7 @@ func main() {
 	}
 	*certStor = utils.GetAbsolutePath(*certStor)
 	config.BuildCertPath(*certStor)
-	config.BuildUserOperation(*bindWanted, *laddr, *certStor)
+	config.BuildUserOperation(*laddr, *certStor)
 	printIPAddr()
 	if !config.CheckCert(false) {
 		panic("Certificate not exists. Generate first.")

@@ -8,9 +8,9 @@ import (
 const (
 	CurrentVersion string = "v0.1.0-git"
 	certPathPrefix        = "/.dumbyc2"
-	certCC         string = "/.dumbyc2/clientcert.pem"
-	certCCPK       string = "/.dumbyc2/clientpk.pem"
-	certCCPin      string = "/.dumbyc2/clientpin.txt"
+	certCC         string = "/.dumbyc2/servercert.pem"
+	certCCPK       string = "/.dumbyc2/serverpk.pem"
+	certCCPin      string = "/.dumbyc2/serverpin.txt"
 	certFC         string = "/.dumbyc2/cacert.pem"
 	certPK         string = "/.dumbyc2/caprivkey.pem"
 	certPin        string = "/.dumbyc2/cacertpin.txt"
@@ -38,8 +38,8 @@ type SSCertificate struct {
 }
 
 type UserOperation struct {
-	NeedBind     bool
-	ListenAddr	 string
+	// only support reverse connection
+	ListenAddr   string
 	CertLocation string
 }
 
@@ -81,10 +81,9 @@ func checkFileExists(filename string) bool {
 	}
 }
 
-func BuildUserOperation(needBind bool, laddr string, certstor string) *UserOperation {
+func BuildUserOperation(laddr string, certstor string) *UserOperation {
 	GlobalOP = &UserOperation{
-		NeedBind:     needBind,
-		ListenAddr:         laddr,
+		ListenAddr:   laddr,
 		CertLocation: certstor,
 	}
 	return GlobalOP

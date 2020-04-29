@@ -44,18 +44,19 @@ func (pbb *PingBack) BuildnSend(conn net.Conn) error {
 	return nil
 }
 
-func (pbb *PingBack) Parse(conn net.Conn) error {
+func ParseIncomingPB(conn net.Conn) (*PingBack, error) {
 	var buf bytes.Buffer
+	pbb := &PingBack{}
 	_, err := io.Copy(&buf, conn)
 	if err != nil {
-		return err
+		return nil, err
 	} else {
 		pbb.StatusCode = buf.Bytes()[0]
 		pbb.DataLength = buf.Bytes()[2]
 		if pbb.DataLength != byte(0) {
 			pbb.DataPart = buf.Bytes()[4:]
 		}
-		return nil
+		return pbb, nil
 	}
 }
 
@@ -65,7 +66,7 @@ func (rtc *RTCommand) BuildnSend(conn net.Conn) error {
 	data = append(data, Delimiter, rtc.HasData, Delimiter, rtc.FileLength, Delimiter)
 	data = append(data[:], rtc.FilePathRemote[:]...)
 	data = append(data, Delimiter)
-	if rtc.FilePathLocal != nil {
+	if rtc.FilePathLocal != nil && rtc.HasData == byte(1) { // hasdata=true, upload
 		var err error
 		rtc.RealData, err = ioutil.ReadFile(string(rtc.FilePathLocal))
 		if err != nil {

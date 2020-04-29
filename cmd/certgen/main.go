@@ -52,15 +52,23 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 		PrivKeyData:     nil,
 		CertFingerprint: nil,
 	}
+	var ssClientCert = &config.SSCertificate{
+		CertData:        nil,
+		PrivKeyData:     nil,
+		CertFingerprint: nil,
+	}
 	bits := 4096
 	// generate rsa key pairs
 	cAprivKey, err := rsa.GenerateKey(rand.Reader, bits)
 	privKey, err := rsa.GenerateKey(rand.Reader, bits)
+	cLientprivKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		return []*config.SSCertificate{ssCACert, ssCert}, errors.Wrap(err, "Generate PRIVKEY Error")
+		return []*config.SSCertificate{ssCACert, ssCert, ssClientCert}, errors.Wrap(err, "Generate PRIVKEY Error")
 	}
 	// generate random things
 	serialNo, _ := rand.Int(rand.Reader, big.NewInt(utils.RandMathInt64(65535)))
+	serialNo2, _ := rand.Int(rand.Reader, big.NewInt(utils.RandMathInt64(65535)))
+	serialNo3, _ := rand.Int(rand.Reader, big.NewInt(utils.RandMathInt64(65535)))
 	randDomain := utils.RandString(8) + ".com"
 	// generate self-signed certificate
 	ssCASignedCert := &x509.Certificate{
@@ -80,9 +88,24 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 		BasicConstraintsValid: true,
 	}
 	ssSignedCert := &x509.Certificate{
-		SerialNumber: serialNo,
+		SerialNumber: serialNo2,
 		Subject: pkix.Name{
-			CommonName: "dumbyc2." + randDomain,
+			CommonName: "dumbyc2-S." + randDomain,
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().AddDate(10, 0, 0),
+		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+			x509.ExtKeyUsageServerAuth,
+		},
+		BasicConstraintsValid: true,
+		IsCA:                  false,
+	}
+	ssClientSignedCert := &x509.Certificate{
+		SerialNumber: serialNo3,
+		Subject: pkix.Name{
+			CommonName: "dumbyc2-C." + randDomain,
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().AddDate(10, 0, 0),
@@ -97,9 +120,10 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 
 	derCACert, err := x509.CreateCertificate(rand.Reader, ssCASignedCert, ssCASignedCert, &cAprivKey.PublicKey, cAprivKey)
 	derCert, err := x509.CreateCertificate(rand.Reader, ssSignedCert, ssCASignedCert, &privKey.PublicKey, privKey)
+	derClientCert, err := x509.CreateCertificate(rand.Reader, ssClientSignedCert, ssCASignedCert, &privKey.PublicKey, privKey)
 
 	if err != nil {
-		return []*config.SSCertificate{ssCACert, ssCert}, errors.Wrap(err, "Create Certificate Error")
+		return []*config.SSCertificate{ssCACert, ssCert, ssClientCert}, errors.Wrap(err, "Create Certificate Error")
 	}
 
 	err = writeCert(derCACert, conf, cAprivKey, ssCACert, true)
@@ -110,8 +134,21 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 	if err != nil {
 		panic(err)
 	}
+	clientConf := &config.UserConfig{
+		OutputPath:           conf.OutputPath,
+		ClientPath:           conf.OutputPath + "/clientcert.pem",
+		ClientPrivateKeyPath: conf.OutputPath + "/clientpk.pem",
+		ClientPinPath:        conf.OutputPath + "/clientpin.txt",
+		CAPath:               conf.CAPath,
+		CAPrivateKeyPath:     conf.CAPrivateKeyPath,
+		CACertPinPath:        conf.CACertPinPath,
+	}
+	err = writeCert(derClientCert, clientConf, cLientprivKey, ssClientCert, false)
+	if err != nil {
+		panic(err)
+	}
 
-	return []*config.SSCertificate{ssCACert, ssCert}, nil
+	return []*config.SSCertificate{ssCACert, ssCert, ssClientCert}, nil
 }
 
 func writeCert(cert []byte, conf *config.UserConfig, certKey *rsa.PrivateKey, ssCert *config.SSCertificate, isCA bool) error {
