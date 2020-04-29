@@ -32,7 +32,7 @@ func main() {
 	printBanner()
 	printVersion()
 	parser := argparse.NewParser(os.Args[0], "Dumb C2")
-	certStor := parser.String("C", "cert", &argparse.Options{
+	certStor := parser.String("c", "cert", &argparse.Options{
 		Required: false,
 		Help:     "Certificate Location",
 		Default:  "~",

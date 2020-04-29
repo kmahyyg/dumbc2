@@ -2,9 +2,29 @@
 
 Yet Another Simple C2(Command and Control) Tool
 
+## NOTE
+
+We will not offer agent binary, since it needs your own CA cert to authenticaiton. 
+You need to download Golang SDK and build it yourself.
+
+Build Steps:
+
+- Download `certgen` from release
+- Run `certgen` and copy `client*.pem` and `serverpin.txt` from output directory, default is `~/.dumbyc2`
+- Put the `client*.pem` and `serverpin.txt` to `buildtime/certs`
+- Run: `make agent`
+
+## Build
+
+`make dumbc2` for Controller.
+
+`make certgen` for Certificate Generator.
+
+`make prune` for Clearing all output binaries.
+
 ## Current Status
 
-Need More Time. Currently un-maintained.
+v0.2.2-git
 
 ## Feature
 
