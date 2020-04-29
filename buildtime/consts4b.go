@@ -1,8 +1,8 @@
 package buildtime
 
 import (
-	"github.com/rakyll/statik/fs"
 	_ "github.com/kmahyyg/dumbc2/statik"
+	"github.com/rakyll/statik/fs"
 	"log"
 	"net/http"
 )
@@ -10,7 +10,7 @@ import (
 var (
 	ClientCertificatePEM *[]byte
 	ClientCertificateKey *[]byte
-	RemoteFingerprint *[]byte
+	RemoteFingerprint    *[]byte
 )
 
 func GetCertificates() error {

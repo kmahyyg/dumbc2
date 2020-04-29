@@ -25,7 +25,7 @@ func main() {
 		panic(err)
 	}
 	config.BuildUserOperation(*laddr, "")
-	if buildtime.GetCertificates() != nil{
+	if buildtime.GetCertificates() != nil {
 		panic("Certificate not exists. Generate first.")
 	}
 	useri.StartAgent(config.GlobalOP)

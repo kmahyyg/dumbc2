@@ -3,6 +3,7 @@ package remoteop
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,7 +14,7 @@ const (
 	StatusOK     = byte(0)
 	StatusFailed = byte(1)
 	Delimiter    = byte('$')
-	StatusEEXIST = byte(2)
+	//StatusEEXIST = byte(2)
 )
 
 type PingBack struct {
@@ -57,6 +58,26 @@ func ParseIncomingPB(conn net.Conn) (*PingBack, error) {
 		}
 		return pbb, nil
 	}
+}
+
+func ParseIncomingRTCmd(data []byte) (rtCmd *RTCommand, err error) {
+	newdata := bytes.Split(data, []byte("$"))
+	realData := bytes.Join(newdata[5:], []byte{})
+	err = errors.New("Predefined ParseIncomingRTCmd Error.")
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Error in ParseIncomingRTCmd!")
+		}
+	}()
+	rtCmd = &RTCommand{
+		Command:        newdata[0],
+		FilePathLocal:  newdata[1],
+		FilePathRemote: newdata[2],
+		FileLength:     newdata[3][0],
+		HasData:        newdata[4][0],
+		RealData:       realData,
+	}
+	return rtCmd, nil
 }
 
 func (rtc *RTCommand) BuildnSend(conn net.Conn) error {
