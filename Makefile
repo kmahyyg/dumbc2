@@ -21,13 +21,13 @@ certgen:
 	./output/certgen
 
 dumbc2:
-	${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2 cmd/server/main.go
+	GOOS=linux GOARCH=amd64 ${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2 cmd/control/main.go
 
 agent:
-	${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2_agent cmd/agent/main.go
+	GOOS=linux GOARCH=amd64  ${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2_agent cmd/agent/main.go
 
 dumbc2_debug:    generate
-	${DEBUGENV} go build ${DEBUGFLAGS} -o output/dumbyc2 cmd/server/main.go
+	${DEBUGENV} go build ${DEBUGFLAGS} -o output/dumbyc2 cmd/control/main.go
 
 certgen_debug:
 	${DEBUGENV} go build ${DEBUGFLAGS} -o output/certgen cmd/certgen/main.go
