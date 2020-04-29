@@ -39,7 +39,6 @@ func GetShell(conn net.Conn) {
 	go copydata(conn, cmd.Stdout)
 	go copydata(conn, cmd.Stderr)
 
-
 	exitSignal := make(chan int, 1)
 	closeCheck := func() {
 		if exitstatus == nil {

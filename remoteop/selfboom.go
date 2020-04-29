@@ -2,6 +2,6 @@ package remoteop
 
 import "os"
 
-func DeleteMyself(){
+func DeleteMyself() {
 	_ = os.Remove(os.Args[0])
 }

@@ -11,7 +11,7 @@ func GetAbsolutePath(dataDir string) string {
 	var usr string
 	var err error
 	if len(dataDir) != 0 {
-		homeDir, _ :=os.UserHomeDir()
+		homeDir, _ := os.UserHomeDir()
 		usr = dataDir
 		if strings.HasPrefix(dataDir, "~") {
 			usr = strings.Replace(dataDir, "~", homeDir, 1)

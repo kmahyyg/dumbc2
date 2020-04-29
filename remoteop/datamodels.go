@@ -10,27 +10,26 @@ import (
 )
 
 const (
-	StatusOK = byte(0)
+	StatusOK     = byte(0)
 	StatusFailed = byte(1)
-	Delimiter = byte('$')
+	Delimiter    = byte('$')
 	StatusEEXIST = byte(2)
 )
 
 type PingBack struct {
 	StatusCode byte
-	DataLength byte    // 0 means status only
-	DataPart []byte
+	DataLength byte // 0 means status only
+	DataPart   []byte
 }
 
 type RTCommand struct {
-	Command []byte
-	FilePathLocal []byte
+	Command        []byte
+	FilePathLocal  []byte
 	FilePathRemote []byte
-	FileLength byte     // Megabyte
-	HasData	 byte		// 0 for false, 1 for true
-	RealData  []byte
+	FileLength     byte // Megabyte
+	HasData        byte // 0 for false, 1 for true
+	RealData       []byte
 }
-
 
 func (pbb *PingBack) BuildnSend(conn net.Conn) error {
 	var data []byte
@@ -64,6 +63,9 @@ func (rtc *RTCommand) BuildnSend(conn net.Conn) error {
 	var data []byte
 	data = append(data[:], rtc.Command[:]...)
 	data = append(data, Delimiter, rtc.HasData, Delimiter, rtc.FileLength, Delimiter)
+	if rtc.FilePathRemote == nil {
+		rtc.FilePathRemote = []byte{0x00}
+	}
 	data = append(data[:], rtc.FilePathRemote[:]...)
 	data = append(data, Delimiter)
 	if rtc.FilePathLocal != nil && rtc.HasData == byte(1) { // hasdata=true, upload
@@ -73,6 +75,9 @@ func (rtc *RTCommand) BuildnSend(conn net.Conn) error {
 			log.Println("Read Error for local file.")
 			return err
 		}
+	}
+	if rtc.RealData == nil {
+		rtc.RealData = []byte{0x00}
 	}
 	data = append(data[:], rtc.RealData...)
 	lendt, err := conn.Write(data)

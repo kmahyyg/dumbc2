@@ -22,9 +22,9 @@ import (
 
 func main() {
 	var fileLoca string
-	flag.StringVar(&fileLoca, "o", "~","Output Directory")
+	flag.StringVar(&fileLoca, "o", "~", "Output Directory")
 	flag.Parse()
-    fileLoca = utils.GetAbsolutePath(fileLoca)
+	fileLoca = utils.GetAbsolutePath(fileLoca)
 	log.Println("Program started.")
 	currentConf := config.BuildCertPath(fileLoca)
 	_ = os.Mkdir(currentConf.OutputPath, 0755)
@@ -96,7 +96,6 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 		NotAfter:  time.Now().AddDate(10, 0, 0),
 		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageClientAuth,
 			x509.ExtKeyUsageServerAuth,
 		},
 		BasicConstraintsValid: true,
@@ -112,7 +111,6 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageClientAuth,
-			x509.ExtKeyUsageServerAuth,
 		},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
@@ -126,24 +124,15 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 		return []*config.SSCertificate{ssCACert, ssCert, ssClientCert}, errors.Wrap(err, "Create Certificate Error")
 	}
 
-	err = writeCert(derCACert, conf, cAprivKey, ssCACert, true)
+	err = writeCert(derCACert, conf, cAprivKey, ssCACert, true, false)
 	if err != nil {
 		panic(err)
 	}
-	err = writeCert(derCert, conf, privKey, ssCert, false)
+	err = writeCert(derCert, conf, privKey, ssCert, false, true)
 	if err != nil {
 		panic(err)
 	}
-	clientConf := &config.UserConfig{
-		OutputPath:           conf.OutputPath,
-		ClientPath:           conf.OutputPath + "/clientcert.pem",
-		ClientPrivateKeyPath: conf.OutputPath + "/clientpk.pem",
-		ClientPinPath:        conf.OutputPath + "/clientpin.txt",
-		CAPath:               conf.CAPath,
-		CAPrivateKeyPath:     conf.CAPrivateKeyPath,
-		CACertPinPath:        conf.CACertPinPath,
-	}
-	err = writeCert(derClientCert, clientConf, cLientprivKey, ssClientCert, false)
+	err = writeCert(derClientCert, conf, cLientprivKey, ssClientCert, false, false)
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +140,7 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 	return []*config.SSCertificate{ssCACert, ssCert, ssClientCert}, nil
 }
 
-func writeCert(cert []byte, conf *config.UserConfig, certKey *rsa.PrivateKey, ssCert *config.SSCertificate, isCA bool) error {
+func writeCert(cert []byte, conf *config.UserConfig, certKey *rsa.PrivateKey, ssCert *config.SSCertificate, isCA bool, isServer bool) error {
 	// pem encode and write out
 	buf := &bytes.Buffer{}
 	err := pem.Encode(buf, &pem.Block{
@@ -195,6 +184,19 @@ func writeCert(cert []byte, conf *config.UserConfig, certKey *rsa.PrivateKey, ss
 			panic(errors.Wrap(err, "Errors in Write Generated Cert"))
 		}
 		err = ioutil.WriteFile(conf.CACertPinPath, ssCert.CertFingerprint, 0644)
+		if err != nil {
+			panic(errors.Wrap(err, "Errors in Write Certificate Pin"))
+		}
+	} else if isServer {
+		err = ioutil.WriteFile(conf.ServerPrivateKeyPath, ssCert.PrivKeyData, 0600)
+		if err != nil {
+			panic(errors.Wrap(err, "Errors in Write Generated Private Key"))
+		}
+		err = ioutil.WriteFile(conf.ServerPath, ssCert.CertData, 0755)
+		if err != nil {
+			panic(errors.Wrap(err, "Errors in Write Generated Cert"))
+		}
+		err = ioutil.WriteFile(conf.ServerPinPath, ssCert.CertFingerprint, 0644)
 		if err != nil {
 			panic(errors.Wrap(err, "Errors in Write Certificate Pin"))
 		}

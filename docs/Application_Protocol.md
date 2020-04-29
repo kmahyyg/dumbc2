@@ -38,6 +38,6 @@
 
 `00$xx$DATA`
 
-- `00` status code, 00 for success, 01 for failed, 02 for EEXIST
+- `00` status code, 00 for success, 01 for failed, 02 for EEXIST, FF for CONTINUE
 - `xx` file length, in megabytes, can be zero if not required.
 - `DATA` for details, if no data, just use `\x00`.

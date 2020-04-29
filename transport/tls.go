@@ -13,12 +13,17 @@ import (
 	"time"
 )
 
-type TLSPinnedDialer func(network, addr string)(net.Conn, error)
+type TLSPinnedDialer func(network, addr string) (net.Conn, error)
 
-func TLSDialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
-	return func(network, addr string) (net.Conn,error) {
+func TLSDialerBuilder(pinnedFGP []byte, clientCert string, clientKey string) TLSPinnedDialer {
+	return func(network, addr string) (net.Conn, error) {
+		cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
+		if err != nil {
+			panic(err)
+		}
 		conn, err := tls.Dial(network, addr, &tls.Config{
 			InsecureSkipVerify: true,
+			Certificates:       []tls.Certificate{cert},
 		})
 		if err != nil {
 			return conn, err
@@ -43,15 +48,15 @@ func TLSDialerBuilder(pinnedFGP []byte) TLSPinnedDialer {
 
 // TLSServerBuilder: Just give the server listen addr, we do next.
 // You do need to check the client certificate if you use Bind Shell.
-func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error){
+func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error) {
 	var certLoca = config.GlobalCert
-	cert, err := tls.LoadX509KeyPair(certLoca.CAPath, certLoca.CAPrivateKeyPath)
+	cert, err := tls.LoadX509KeyPair(certLoca.ClientPath, certLoca.ClientPrivateKeyPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	var tlsConf *tls.Config
-	if !verifyClient{
+	if !verifyClient {
 		tlsConf = &tls.Config{Certificates: []tls.Certificate{cert}}
 	} else {
 		caAuthCert, err := ioutil.ReadFile(certLoca.CAPath)
@@ -61,8 +66,9 @@ func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error){
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caAuthCert)
 		tlsConf = &tls.Config{
-			ClientAuth: tls.RequireAndVerifyClientCert,
-			ClientCAs:  caCertPool,
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{cert},
+			ClientCAs:    caCertPool,
 		}
 	}
 
@@ -72,7 +78,7 @@ func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error){
 	}
 	tlsConf.Rand = rand.Reader
 	curLis, err := tls.Listen("tcp", laddr, tlsConf)
-	if err != nil || curLis == nil{
+	if err != nil || curLis == nil {
 		log.Fatalln(curLis)
 	}
 	return curLis, err

