@@ -2,6 +2,10 @@
 
 Yet Another Simple C2(Command and Control) Tool
 
+## DISCLAIMER
+
+USE IT IN A LEGAL WAY. WE WON'T TAKE ANY RESPONSIBILITY FOR YOUR BEHAVIOUR.
+
 ## NOTE
 
 We will not offer agent binary, since it needs your own CA cert to authenticaiton. 
