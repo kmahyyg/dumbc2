@@ -7,6 +7,7 @@ RELEASEENV = CGO_ENABLED=0
 
 clean:
 	rm -rf output/*
+	rm -rf statik/*
 
 generate:
 	go generate cmd/agent/main.go
@@ -14,11 +15,10 @@ generate:
 prune:    clean
 	rm -rf buildtime/certs/*.pem
 	rm -rf buildtime/certs/*.txt
-	rm -rf statik/
 
 certgen:
 	${RELEASEENV} go build ${RELEASEFLAGS} -o output/certgen cmd/certgen/main.go
-	. output/certgen
+	./output/certgen
 
 dumbc2:
 	${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2 cmd/server/main.go
