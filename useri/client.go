@@ -15,8 +15,8 @@ import (
 )
 
 func StartAgent(userOP *config.UserOperation) {
-	servFGP := make([]byte, base64.StdEncoding.DecodedLen(len(*buildtime.RemoteFingerprint)))
-	_, err := base64.StdEncoding.Decode(servFGP, *buildtime.RemoteFingerprint)
+	servFGP := make([]byte, base64.StdEncoding.DecodedLen(len(buildtime.RemoteFingerprint)))
+	_, err := base64.StdEncoding.Decode(servFGP, buildtime.RemoteFingerprint)
 	if err != nil {
 		log.Fatalln("Server Pinned Key Error.")
 	}
@@ -28,7 +28,7 @@ func StartAgent(userOP *config.UserOperation) {
 		if errCounter >= 3 {
 			return
 		}
-		curConn, err = transport.TLSDialer(servFGP, *buildtime.ClientCertificatePEM, *buildtime.ClientCertificateKey, userOP.ListenAddr)
+		curConn, err = transport.TLSDialer(servFGP, buildtime.ClientCertificatePEM, buildtime.ClientCertificateKey, buildtime.CACertificate, userOP.ListenAddr)
 		if err != nil {
 			errCounter++
 			log.Println(err)

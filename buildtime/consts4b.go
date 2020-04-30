@@ -8,9 +8,10 @@ import (
 )
 
 var (
-	ClientCertificatePEM *[]byte
-	ClientCertificateKey *[]byte
-	RemoteFingerprint    *[]byte
+	ClientCertificatePEM []byte
+	ClientCertificateKey []byte
+	RemoteFingerprint    []byte
+	CACertificate        []byte
 )
 
 func GetCertificates() error {
@@ -33,10 +34,15 @@ func GetCertificates() error {
 		log.Fatalln(err)
 	}
 	RemoteFingerprint = bufferAndRead(SPKFd)
+	CACertFD, err := statikFS.Open("/cacert.pem")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	CACertificate = bufferAndRead(CACertFD)
 	return nil
 }
 
-func bufferAndRead(fd http.File) *[]byte {
+func bufferAndRead(fd http.File) []byte {
 	fdlen1, err := fd.Stat()
 	if err != nil {
 		log.Fatalln(err)
@@ -46,5 +52,5 @@ func bufferAndRead(fd http.File) *[]byte {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return &buf
+	return buf
 }

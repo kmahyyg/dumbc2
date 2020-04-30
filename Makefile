@@ -12,6 +12,7 @@ all: clean certgen copycerts generate dumbc2 agent
 
 copycerts:
 	./output/certgen
+	cp -af ~/.dumbyc2/cacert.pem buildtime/certs/
 	cp -af ~/.dumbyc2/clientpk.pem buildtime/certs/
 	cp -af ~/.dumbyc2/clientcert.pem buildtime/certs/
 	cp -af ~/.dumbyc2/serverpin.txt buildtime/certs/

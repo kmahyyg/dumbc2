@@ -36,6 +36,7 @@ func StartServer(userOP config.UserOperation) {
 	}
 	for true {
 		if lbserver != nil {
+			log.Println("Listen to Port Successfully, Wait for connection...")
 			conn, err := lbserver.Accept()
 			if err != nil {
 				log.Println(err)
