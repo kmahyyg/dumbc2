@@ -18,17 +18,17 @@ func GetCertificates() error {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	CertFD, err := statikFS.Open("clientcert.pem")
+	CertFD, err := statikFS.Open("/clientcert.pem")
 	if err != nil {
 		log.Fatalln(err)
 	}
 	ClientCertificatePEM = bufferAndRead(CertFD)
-	CertKey, err := statikFS.Open("clientpk.pem")
+	CertKey, err := statikFS.Open("/clientpk.pem")
 	if err != nil {
 		log.Fatalln(err)
 	}
 	ClientCertificateKey = bufferAndRead(CertKey)
-	SPKFd, err := statikFS.Open("serverpin.txt")
+	SPKFd, err := statikFS.Open("/serverpin.txt")
 	if err != nil {
 		log.Fatalln(err)
 	}

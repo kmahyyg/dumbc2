@@ -1,6 +1,6 @@
 //go:generate go get -u github.com/rakyll/statik
-//go:generate bash -l -c "echo 'Please Copy Your Certs to buildtime/certs. '"
-//go:generate bash -l -c "cd ../../; statik -f -src=buildtime/certs/ -include=*.pem, *.txt ; echo 'OK.'"
+//go:generate bash -c "echo 'Please Copy Your Certs to buildtime/certs. '"
+//go:generate bash -c "cd ../../; statik -m -f -src=buildtime/certs/ ; echo 'OK.'"
 
 package main
 

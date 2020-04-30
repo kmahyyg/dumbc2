@@ -2,6 +2,7 @@ package useri
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -183,9 +184,13 @@ func handleClient(conn net.Conn) {
 			go copydata(os.Stdout, conn)
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
-				_, err := conn.Write(scanner.Bytes())
+				inputcmd := scanner.Bytes()
+				_, err := conn.Write(inputcmd)
 				if err != nil {
 					log.Println(err)
+					break
+				}
+				if bytes.Equal(inputcmd, []byte("exit\n")) || bytes.Equal(inputcmd, []byte("exit\r\n")) {
 					break
 				}
 			}

@@ -13,25 +13,22 @@ import (
 	"time"
 )
 
-type TLSPinnedDialer func(network, addr string) (net.Conn, error)
-
-func TLSDialerBuilder(pinnedFGP []byte, clientCert interface{}, clientKey interface{}) TLSPinnedDialer {
-	return func(network, addr string) (net.Conn, error) {
-		cert, err := tls.X509KeyPair(clientCert.([]byte), clientKey.([]byte))
-		if err != nil {
-			panic(err)
-		}
-		conn, err := tls.Dial(network, addr, &tls.Config{
-			InsecureSkipVerify: true,
-			Certificates:       []tls.Certificate{cert},
-		})
-		if err != nil {
-			return conn, err
-		}
-		connState := conn.ConnectionState()
-		for _, peerCert := range connState.PeerCertificates {
-			der, err := x509.MarshalPKIXPublicKey(peerCert.PublicKey)
-			hash := sha256.Sum256(der)
+func TLSDialer(pinnedFGP []byte, clientCert []byte, clientKey []byte, addr string) (net.Conn, error) {
+	cert, err := tls.X509KeyPair(clientCert, clientKey)
+	if err != nil {
+		panic(err)
+	}
+	conn, err := tls.Dial("tcp", addr, &tls.Config{
+		InsecureSkipVerify: true,
+		Certificates:       []tls.Certificate{cert},
+	})
+	if err != nil {
+		return conn, err
+	}
+	connState := conn.ConnectionState()
+	for _, peerCert := range connState.PeerCertificates {
+		der, err := x509.MarshalPKIXPublicKey(peerCert.PublicKey)
+		hash := sha256.Sum256(der)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -43,7 +40,6 @@ func TLSDialerBuilder(pinnedFGP []byte, clientCert interface{}, clientKey interf
 		}
 		_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
 		return conn, nil
-	}
 }
 
 // TLSServerBuilder: Just give the server listen addr, we do next.

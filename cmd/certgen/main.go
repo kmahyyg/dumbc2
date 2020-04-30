@@ -29,7 +29,8 @@ func main() {
 	currentConf := config.BuildCertPath(fileLoca)
 	_ = os.Mkdir(currentConf.OutputPath, 0755)
 	if config.CheckCert(false) {
-		log.Fatalln("Certificate Already Exists. Delete ~/.dumbyc2 then re-run this program.")
+		log.Println("Certificate Already Exists. Delete ~/.dumbyc2 then re-run this program.")
+		os.Exit(0)
 	}
 	log.Println("Start Generation, Please hang on.")
 	_, err := generateCertificate(currentConf)
@@ -118,7 +119,7 @@ func generateCertificate(conf *config.UserConfig) ([]*config.SSCertificate, erro
 
 	derCACert, err := x509.CreateCertificate(rand.Reader, ssCASignedCert, ssCASignedCert, &cAprivKey.PublicKey, cAprivKey)
 	derCert, err := x509.CreateCertificate(rand.Reader, ssSignedCert, ssCASignedCert, &privKey.PublicKey, privKey)
-	derClientCert, err := x509.CreateCertificate(rand.Reader, ssClientSignedCert, ssCASignedCert, &privKey.PublicKey, privKey)
+	derClientCert, err := x509.CreateCertificate(rand.Reader, ssClientSignedCert, ssCASignedCert, &cLientprivKey.PublicKey, cLientprivKey)
 
 	if err != nil {
 		return []*config.SSCertificate{ssCACert, ssCert, ssClientCert}, errors.Wrap(err, "Create Certificate Error")

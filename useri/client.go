@@ -20,7 +20,6 @@ func StartAgent(userOP *config.UserOperation) {
 	if err != nil {
 		log.Fatalln("Server Pinned Key Error.")
 	}
-	pinnedDialer := transport.TLSDialerBuilder(servFGP, buildtime.ClientCertificateKey, buildtime.ClientCertificatePEM)
 	var errCounter = 0
 	var buf bytes.Buffer
 	var curConn net.Conn
@@ -29,7 +28,7 @@ func StartAgent(userOP *config.UserOperation) {
 		if errCounter >= 3 {
 			return
 		}
-		curConn, err = pinnedDialer("tcp", userOP.ListenAddr)
+		curConn, err = transport.TLSDialer(servFGP, *buildtime.ClientCertificatePEM, *buildtime.ClientCertificateKey, userOP.ListenAddr)
 		if err != nil {
 			errCounter++
 			log.Println(err)
