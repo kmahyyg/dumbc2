@@ -64,5 +64,5 @@ func printBanner() {
 	const banner = "DumbY-C2"
 	myFigure := figure.NewFigure(banner, "", true)
 	myFigure.Print()
-	fmt.Println("\t\t" + config.CurrentVersion + " - master - 20200430")
+	fmt.Println("\t\t   " + config.CurrentVersion + " - master - 20200430")
 }
