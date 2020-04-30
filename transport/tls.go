@@ -64,11 +64,10 @@ func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error) {
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caAuthCert)
 		tlsConf = &tls.Config{
-			ClientAuth:         tls.RequireAndVerifyClientCert,
-			InsecureSkipVerify: true,
-			Certificates:       []tls.Certificate{cert},
-			RootCAs:            caCertPool,
-			ClientCAs:          caCertPool,
+			ClientAuth:   tls.RequireAnyClientCert,
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caCertPool,
+			ClientCAs:    caCertPool,
 		}
 	}
 
