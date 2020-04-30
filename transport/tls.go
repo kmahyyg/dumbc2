@@ -46,7 +46,7 @@ func TLSDialer(pinnedFGP []byte, clientCert []byte, clientKey []byte, addr strin
 // You do need to check the client certificate if you use Bind Shell.
 func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error) {
 	var certLoca = config.GlobalCert
-	cert, err := tls.LoadX509KeyPair(certLoca.ClientPath, certLoca.ClientPrivateKeyPath)
+	cert, err := tls.LoadX509KeyPair(certLoca.ServerPath, certLoca.ServerPrivateKeyPath)
 	if err != nil {
 		log.Fatalln(err)
 	}

