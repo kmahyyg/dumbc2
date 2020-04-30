@@ -6,28 +6,26 @@ Communication protected by TLS.
 
 Run this program with command line arguments:
 
--  `-s`, run as controller.
--  `-c`, run as agent.
+For Agent:
 
-`-s` and `-c` are conflict, you must choose one.
+- `-r <ADDR:PORT>` Remote Controller IP
 
-- `-b`, optional, run as bind agent, will try to bind port, must co-operate with `-c`.
+For Controller:
 
-if not `-b` is not defined, it works as reverse connection.
+- `-l <ADDR:PORT>` Listen to.
 
-- `-H IP`, required, define the remote IP or bind IP.
-- `-P Port`, required, define the remote Port or bind Port.
+General:
 
 - `-C Directory`, optional, certificate location, directory should be absolute path if possible, 
 else no guarantee the program will provided to find the file correctly, default to `~`.
 
 If you are running the first time, you should run `certgen` first.
 
-Certgen will generate certificates and corresponding keys to `<Folder You Defined / Home Dir>/.dumbyc2/`.
-
 - `-h, --help`, optional, show help message.  
 
 # Certgen - Command line arguments
+
+Certgen will generate certificates and corresponding keys to `<Folder You Defined / Home Dir>/.dumbyc2/`.
 
 Generate RSA 4096 bits certificates (both CA and Server) and save corresponding keys.
 

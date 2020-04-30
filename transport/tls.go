@@ -78,6 +78,7 @@ func TLSServerBuilder(laddr string, verifyClient bool) (net.Listener, error) {
 	tlsConf.Rand = rand.Reader
 	curLis, err := tls.Listen("tcp", laddr, tlsConf)
 	if err != nil || curLis == nil {
+		log.Println("Cannot bind to corresponding Port.")
 		log.Fatalln(curLis)
 	}
 	return curLis, err
