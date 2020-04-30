@@ -67,7 +67,7 @@ func (ucmd *UserCmd) ParseUserInput(uipt []string) (error){
 		switch uipt[0] {
 		case "inject":
 			ucmd.Cmd = CommandINJE
-			ucmd.OptionLCL = uipt[1]
+			ucmd.OptionRMT = uipt[1]
 		default:
 			printHelp()
 			return nil
