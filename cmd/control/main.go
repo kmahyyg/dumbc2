@@ -57,7 +57,7 @@ func main() {
 }
 
 func printIPAddr() {
-	fmt.Println("Interface IP: " + utils.GetLocalIP())
+	fmt.Printf("Interface IPs: %s \n", utils.GetAllIPs())
 }
 
 func printBanner() {

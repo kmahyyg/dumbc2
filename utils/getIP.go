@@ -1,24 +1,25 @@
 package utils
 
 import (
+	"log"
 	"net"
 )
 
-//func GetAllIPs() []string {
-//	addrs, err := net.InterfaceAddrs()
-//	if err != nil {
-//		return []string{""}
-//	}
-//	var ipData []string
-//	for _, addr := range addrs {
-//		singleIP, _, err := net.ParseCIDR(addr.String())
-//		if err != nil {
-//			log.Fatal(err)
-//		}
-//		ipData = append(ipData, singleIP.String())
-//	}
-//	return ipData
-//}
+func GetAllIPs() []string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return []string{""}
+	}
+	var ipData []string
+	for _, addr := range addrs {
+		singleIP, _, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			log.Fatal(err)
+		}
+		ipData = append(ipData, singleIP.String())
+	}
+	return ipData
+}
 
 func GetLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
