@@ -31,7 +31,7 @@ jobs:
         run: echo "::add-path::$(go env GOPATH)/bin"
 
       - name: Build all platform
-        run: make all-platform
+        run: make all_platform
 
       - name: Release
         uses: softprops/action-gh-release@v1
