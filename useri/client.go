@@ -41,12 +41,7 @@ func StartAgent(userOP *config.UserOperation) {
 			break
 		}
 	}
-	_ = respond2Cmd(curConn)
-}
-
-func respond2Cmd(curConn net.Conn) error {
 	ymcli = nil
-	var err error
 	ymconf := yamux.Config{
 		AcceptBacklog:          256,
 		EnableKeepAlive:        true,
@@ -70,6 +65,10 @@ func respond2Cmd(curConn net.Conn) error {
 	defer func() {
 		_ = ctrlstem.Close()
 	}()
+	_ = respond2Cmd(ctrlstem)
+}
+
+func respond2Cmd(ctrlstem net.Conn) error {
 	for {
 		var ccmd *remoteop.CmdMsg
 		smbuf := make([]byte, 1300)

@@ -85,7 +85,7 @@ func ParseUserInput(uipt []string) (*UserCmd, error) {
 			return ucmd, nil
 		default:
 			printHelp()
-			return nil, errors.New("Unknown Err.")
+			return nil, nil
 		}
 	}
 }
