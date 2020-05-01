@@ -248,12 +248,12 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			}
 		}
 		// write to file and check sha256
-		err = ioutil.WriteFile(ucmd.OptionLCL, buf.Bytes(), 0644)
+		err = ioutil.WriteFile(ucmd.OptionLCL, buf.Bytes()[0:rmtfddata.NextSize], 0644)
 		if err != nil {
 			log.Println(err)
 			return err
 		}
-		if rmtfddata.NextBinHash != fmt.Sprintf("%x", sha256.Sum256(buf.Bytes())) {
+		if rmtfddata.NextBinHash != fmt.Sprintf("%x", sha256.Sum256(buf.Bytes()[0:rmtfddata.NextSize])) {
 			log.Println("** NOTE: THE DATA TRANSFERED MIGHT CORRUPTED, PLEASE VERIFY. **")
 			return nil
 		}
