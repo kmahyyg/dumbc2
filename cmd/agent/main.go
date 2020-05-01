@@ -17,7 +17,7 @@ func main() {
 	parser := argparse.NewParser(os.Args[0], "Dumb C2")
 	laddr := parser.String("r", "remote", &argparse.Options{
 		Required: true,
-		Help:     "The IP You are gonna listen or connect, default is your interface local IP.",
+		Help:     "The IP You are gonna connect, default is your interface local IP.",
 		Default:  utils.GetLocalIP(),
 	})
 	err := parser.Parse(os.Args)

@@ -115,7 +115,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 	switch ucmd.Cmd {
 	case remoteop.CommandBOOM:
 		curcmdmsg = &remoteop.CmdMsg{
-			Status:      0,
+			Status:      remoteop.StatusOK,
 			Cmd:         remoteop.CommandBOOM,
 			Msg:         "",
 			HasNext:     false,
@@ -137,7 +137,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		return err
 	case remoteop.CommandINJE:
 		curcmdmsg = &remoteop.CmdMsg{
-			Status:      0,
+			Status:      remoteop.StatusOK,
 			Cmd:         remoteop.CommandINJE,
 			Msg:         ucmd.OptionRMT,
 			HasNext:     false,
@@ -164,7 +164,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		}
 		sha256hex := fmt.Sprintf("%x", sha256.Sum256(data))
 		curcmdmsg = &remoteop.CmdMsg{
-			Status:      0,
+			Status:      remoteop.StatusOK,
 			Cmd:         remoteop.CommandUPLD,
 			Msg:         ucmd.OptionRMT,
 			NextIsBin:   true,
@@ -205,7 +205,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		_ = datastem.Close()
 	case remoteop.CommandDWLD:
 		curcmdmsg = &remoteop.CmdMsg{
-			Status:      0,
+			Status:      remoteop.StatusOK,
 			Cmd:         remoteop.CommandDWLD,
 			Msg:         ucmd.OptionRMT,
 			NextIsBin:   false,
@@ -237,7 +237,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		}
 		var buf bytes.Buffer
 		for ; buf.Len() < rmtfddata.NextSize; {
-			smbuf := make([]byte, 1400)
+			smbuf := make([]byte, 1300)
 			readint, err := datastem.Read(smbuf)
 			if err != nil || readint == 0 {
 				log.Println(err)
@@ -270,7 +270,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		}
 	case remoteop.CommandBASH:
 		curcmdmsg = &remoteop.CmdMsg{
-			Status:      0,
+			Status:      remoteop.StatusOK,
 			Cmd:         remoteop.CommandBASH,
 			Msg:         "",
 			HasNext:     true, // indicates new stream
@@ -321,7 +321,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 					_ = datastem.Close()
 					break
 				} else {
-					iptdt = append(iptdt, []byte("\n")...)
+					iptdt = append(iptdt, byte('\n'))
 					_, err = datastem.Write(iptdt)
 					if err != nil {
 						_ = datastem.Close()
