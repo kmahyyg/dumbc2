@@ -228,7 +228,7 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			return err
 		}
 		var buf bytes.Buffer
-		for ; buf.Len() < rmtfddata.NextSize; {
+		for buf.Len() < rmtfddata.NextSize {
 			smbuf := make([]byte, 1300)
 			readint, err := datastem.Read(smbuf)
 			if err != nil || readint == 0 {

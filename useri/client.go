@@ -116,7 +116,7 @@ func respond2Cmd(ctrlstem net.Conn) error {
 					continue
 				}
 				var buf bytes.Buffer
-				for ; buf.Len() < ccmd.NextSize; {
+				for buf.Len() < ccmd.NextSize {
 					smbuf := make([]byte, 1300)
 					readint, err := datastem.Read(smbuf)
 					if err != nil || readint == 0 {

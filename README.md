@@ -28,7 +28,7 @@ Build Steps:
 
 ## Current Status
 
-v0.2.2-git
+v1.0.0-git
 
 ## Feature
 

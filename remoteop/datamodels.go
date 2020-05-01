@@ -6,17 +6,17 @@ import (
 )
 
 type CmdMsg struct {
-	Status int			`json:"status"`
-	Cmd string			`json:"cmd"`
-	Msg string			`json:"msg"`
-	HasNext bool		`json:"hasnext"`
-	NextIsBin bool		`json:"nextbin"`
-	NextSize int		`json:"nextsize"`
-	NextBinHash string  `json:"binhash"`
+	Status      int    `json:"status"`
+	Cmd         string `json:"cmd"`
+	Msg         string `json:"msg"`
+	HasNext     bool   `json:"hasnext"`
+	NextIsBin   bool   `json:"nextbin"`
+	NextSize    int    `json:"nextsize"`
+	NextBinHash string `json:"binhash"`
 }
 
 type UserCmd struct {
-	Cmd string
+	Cmd       string
 	OptionLCL string
 	OptionRMT string
 }
@@ -72,7 +72,7 @@ func ParseUserInput(uipt []string) (*UserCmd, error) {
 			return nil, errors.New("Unknown Err.")
 		}
 	} else {
-		switch uipt[0]{
+		switch uipt[0] {
 		case "download":
 			ucmd.Cmd = CommandDWLD
 			ucmd.OptionRMT = uipt[1]

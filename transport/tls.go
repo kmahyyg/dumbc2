@@ -40,8 +40,8 @@ func TLSDialer(pinnedFGP []byte, clientCert []byte, clientKey []byte, caCert []b
 			log.Fatalln("Certificate check error.")
 		}
 	}
-		_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
-		return conn, nil
+	_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
+	return conn, nil
 }
 
 // TLSServerBuilder: Just give the server listen addr, we do next.
