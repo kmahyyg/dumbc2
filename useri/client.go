@@ -45,6 +45,7 @@ func StartAgent(userOP *config.UserOperation) {
 }
 
 func respond2Cmd(curConn net.Conn) error {
+	ymcli = nil
 	var err error
 	ymconf := yamux.Config{
 		AcceptBacklog:          256,
@@ -93,13 +94,6 @@ func respond2Cmd(curConn net.Conn) error {
 			switch ccmd.Cmd {
 			case remoteop.CommandBOOM:
 				remoteop.DeleteMyself()
-				_, err := ctrlstem.Write(successResp(ccmd))
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-			case remoteop.CommandINJE:
-				remoteop.InjectShellcode(ccmd.Msg)
 				_, err := ctrlstem.Write(successResp(ccmd))
 				if err != nil {
 					log.Println(err)

