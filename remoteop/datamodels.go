@@ -22,16 +22,17 @@ type UserCmd struct {
 }
 
 const (
-	CommandBOOM = "boom"
-	CommandINJE = "inje"
-	CommandBASH = "bash"
-	CommandUPLD = "upld"
-	CommandDWLD = "dwld"
-	CommandEXIT = "exit"
-	StatusOK = 0
-	StatusNEXISTS = 1
-	StatusFAILED = 2
-	StatusOtherErr = 3
+	CommandBOOM       = "boom"
+	CommandINJE       = "inje"
+	CommandBASH       = "bash"
+	CommandUPLD       = "upld"
+	CommandDWLD       = "dwld"
+	CommandEXIT       = "exit"
+	StatusOK          = 0
+	StatusFinishTrans = 1
+	StatusNEXISTS     = 2
+	StatusFAILED      = 3
+	StatusOtherErr    = 4
 )
 
 func printHelp() {

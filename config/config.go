@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	CurrentVersion string = "v0.4-git"
+	CurrentVersion string = "v0.4.3-git"
 	certPathPrefix string = "/.dumbyc2"
 	certSCC        string = "/.dumbyc2/servercert.pem"
 	certSCCPK      string = "/.dumbyc2/serverpk.pem"

