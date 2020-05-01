@@ -79,13 +79,19 @@ func handleClient(conn net.Conn) {
 		} else if err != nil {
 			log.Println(err)
 			continue
+		} else if userCmd == nil {
+			continue
 		}
 		recvconn, err := ymserv.Accept()
 		if err != nil {
 			log.Println("Mux Error.")
 			break
 		}
-		_ = userCommandProcess(userCmd, recvconn)
+		err = userCommandProcess(userCmd, recvconn)
+		if err != nil {
+			log.Println(err)
+			break
+		}
 	}
 }
 
@@ -134,7 +140,11 @@ func userCommandProcess(ucmd *remoteop.UserCmd, ctrlstem net.Conn) error {
 			return err
 		}
 		_, err = checkRemoteResp(ctrlstem)
-		return err
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		return errors.New("Client BOOM.")
 	case remoteop.CommandUPLD:
 		data, err := ioutil.ReadFile(ucmd.OptionLCL)
 		if err != nil {

@@ -63,7 +63,7 @@ func ParseUserInput(uipt []string) (*UserCmd, error) {
 			fallthrough
 		default:
 			printHelp()
-			return nil, errors.New("Unknown Err.")
+			return nil, nil
 		}
 	} else if len(uipt) == 2 {
 		switch uipt[0] {

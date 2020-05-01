@@ -128,13 +128,18 @@ func respond2Cmd(curConn net.Conn) error {
 					buf.Write(smbuf)
 				}
 				_ = datastem.Close()
-				err = ioutil.WriteFile(ccmd.Msg, buf.Bytes(), 0644)
+				err = ioutil.WriteFile(ccmd.Msg, buf.Bytes()[0:ccmd.NextSize], 0644)
 				if err != nil {
 					log.Println(err)
 					continue
 				}
-				if ccmd.NextBinHash != fmt.Sprintf("%x", sha256.Sum256(buf.Bytes())) {
+				if ccmd.NextBinHash != fmt.Sprintf("%x", sha256.Sum256(buf.Bytes()[0:ccmd.NextSize])) {
 					log.Println("** NOTE: THE DATA TRANSFERED MIGHT CORRUPTED, PLEASE VERIFY. **")
+				}
+				_, err = ctrlstem.Write(successResp(ccmd))
+				if err != nil {
+					log.Println(err)
+					continue
 				}
 			case remoteop.CommandDWLD:
 				fddata, err := ioutil.ReadFile(ccmd.Msg)
