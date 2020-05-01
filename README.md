@@ -14,8 +14,8 @@ You need to download Golang SDK and build it yourself.
 Build Steps:
 
 - Download `certgen` from release
-- Run `certgen` and copy `client*.pem` and `serverpin.txt` from output directory, default is `~/.dumbyc2`
-- Put the `client*.pem` and `serverpin.txt` to `buildtime/certs`
+- Run `certgen` and copy `client*.pem` `cacert.pem` and `serverpin.txt` from output directory, default is `~/.dumbyc2`
+- Put the `client*.pem` `cacert.pem` and `serverpin.txt` to `buildtime/certs`
 - Run: `make agent`
 
 ## Build
