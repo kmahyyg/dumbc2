@@ -1,4 +1,4 @@
-.PHONY: certgen output certgen_debug dumbc2 dumbc2_debug all debugserver
+.PHONY: certgen output certgen_debug dumbc2 dumbc2_debug all debugserver all_platform
 
 DEBUGFLAGS = -race
 DEBUGENV = CGO_ENABLED=1
@@ -8,7 +8,7 @@ RELEASEENV = CGO_ENABLED=0
 debugserver:
 	cd output; python3 -m http.server 8080 &
 
-all_linux: clean certgen copycerts generate dumbc2 agent
+all: clean certgen copycerts generate dumbc2 agent
 
 all_platform: generate
 	OUTPUT=./output/certgen ./scripts/build-all.sh cmd/certgen/main.go
