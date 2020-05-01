@@ -8,7 +8,14 @@ RELEASEENV = CGO_ENABLED=0
 debugserver:
 	cd output; python3 -m http.server 8080 &
 
-all: clean certgen copycerts generate dumbc2 agent
+all_linux: clean certgen copycerts generate dumbc2 agent
+
+all_platform: generate
+	OUTPUT=./output/certgen ./scripts/build-all.sh cmd/certgen/main.go
+	OUTPUT=./output/dumbc2	./scripts/build-all.sh cmd/control/main.go
+	echo "Due the TLS Authentication, If you need agent, compile it yourself." > ./output/dumbc2_agent
+	bash ./scripts/archive-release.sh
+	bash ./scripts/sha256sums.sh
 
 copycerts:
 	./output/certgen
@@ -47,4 +54,3 @@ certgen_debug:
 
 agent_debug:    generate
 	${DEBUGENV} go build ${DEBUGFLAGS} -o output/dumbyc2_agent cmd/agent/main.go
-
