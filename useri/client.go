@@ -36,7 +36,7 @@ func StartAgent(userOP *config.UserOperation) {
 		if err != nil {
 			errCounter++
 			log.Println(err)
-			time.Sleep(5 * time.Minute)
+			time.Sleep(2 * time.Minute)
 		} else {
 			break
 		}

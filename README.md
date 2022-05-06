@@ -28,7 +28,13 @@ Build Steps:
 
 ## Current Status
 
-v1.1.0-git
+v1.0.1-git
+
+TODO:
+
+- Multi-Session asynchronous handling (multi-threaded)
+
+Due to the software design, its maintainability is not good. So we decided to archive this and build for learning purpose only. In a foreseeable future, this project will be bugfix only.
 
 ## Feature
 
