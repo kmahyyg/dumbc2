@@ -38,7 +38,6 @@ func StartServer(userOP config.UserOperation) {
 				log.Println(err)
 				continue
 			}
-			_ = conn.SetDeadline(time.Now().Add(time.Minute * 10))
 			handleClient(conn)
 		} else {
 			log.Fatalln("Failed to bind.")
