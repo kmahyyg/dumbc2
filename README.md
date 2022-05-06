@@ -28,12 +28,11 @@ Build Steps:
 
 ## Current Status
 
-v1.0.0-git
+v1.1.0-git
 
 ## Feature
 
-- Agent Generator (Bind/Reverse Supported)
-- Transfer via Specific Port of TCP
+- Agent Generator (Reverse Supported)
 - Shell Command
 - File Transfer Operation
 - ALL Traffic Encrypted using TLS with Force SSL Pinning

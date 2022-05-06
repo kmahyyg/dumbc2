@@ -41,10 +41,10 @@ certgen:
 	${RELEASEENV} go build ${RELEASEFLAGS} -o output/certgen cmd/certgen/main.go
 
 dumbc2:
-	GOOS=linux GOARCH=amd64 ${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2 cmd/control/main.go
+	${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2 cmd/control/main.go
 
 agent: generate
-	GOOS=linux GOARCH=amd64 ${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2_agent cmd/agent/main.go
+	${RELEASEENV} go build ${RELEASEFLAGS} -o output/dumbyc2_agent cmd/agent/main.go
 
 dumbc2_debug:
 	${DEBUGENV} go build ${DEBUGFLAGS} -o output/dumbyc2 cmd/control/main.go
